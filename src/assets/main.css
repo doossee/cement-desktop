@@ -1,0 +1,507 @@
+@import 'tailwindcss';
+
+@plugin 'tailwindcss-animate';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+
+  --color-card: hsl(var(--card));
+  --color-card-foreground: hsl(var(--card-foreground));
+
+  --color-popover: hsl(var(--popover));
+  --color-popover-foreground: hsl(var(--popover-foreground));
+
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+
+  --color-border: hsl(var(--border));
+  --color-input: hsl(var(--input));
+  --color-ring: hsl(var(--ring));
+
+  --color-chart-1: hsl(var(--chart-1));
+  --color-chart-2: hsl(var(--chart-2));
+  --color-chart-3: hsl(var(--chart-3));
+  --color-chart-4: hsl(var(--chart-4));
+  --color-chart-5: hsl(var(--chart-5));
+
+  --color-sidebar: hsl(var(--sidebar-background));
+  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
+  --color-sidebar-primary: hsl(var(--sidebar-primary));
+  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
+  --color-sidebar-accent: hsl(var(--sidebar-accent));
+  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
+  --color-sidebar-border: hsl(var(--sidebar-border));
+  --color-sidebar-ring: hsl(var(--sidebar-ring));
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    user-select: none;
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 3px;
+  }
+  
+  /* Track */
+  ::-webkit-scrollbar-track {
+    background: hsl(var(--border));
+  }
+   
+  /* Handle */
+  ::-webkit-scrollbar-thumb {
+    cursor: pointer;
+    background: hsl(0, 1%, 35%);
+  }
+  
+  /* Handle on hover */
+  ::-webkit-scrollbar-thumb:hover {
+    background: hsl(0, 0%, 47%);
+  }
+
+  button {
+    cursor: pointer;
+  }
+}
+
+@layer utilities {
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+  }
+}
+
+/* @layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+  .dark {
+    --background: 0 0% 3.9%;
+    --foreground: 0 0% 98%;
+    --card: 0 0% 3.9%;
+    --card-foreground: 0 0% 98%;
+    --popover: 0 0% 3.9%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 0 0% 98%;
+    --primary-foreground: 0 0% 9%;
+    --secondary: 0 0% 14.9%;
+    --secondary-foreground: 0 0% 98%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
+    --accent-foreground: 0 0% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 14.9%;
+    --input: 0 0% 14.9%;
+    --ring: 0 0% 83.1%;
+    --chart-1: 220 70% 50%;
+    --chart-2: 160 60% 45%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 280 65% 60%;
+    --chart-5: 340 75% 55%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+} */
+
+@layer base {
+  :root {
+    /* --background: 0 0% 100%;
+    --foreground: 0 0% 3.9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 3.9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 3.9%;
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 98%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
+    --accent-foreground: 0 0% 9%;
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
+    --ring: 0 0% 3.9%;
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%; */
+    
+    --background: 217.5 9.09% 17.25%;
+    --foreground: 334 34% 98%;
+    --muted: 210 9.09% 12.94%;
+    --muted-foreground: 334 0% 60.77%;
+    --popover: 210 9.09% 12.94%;
+    --popover-foreground: 334 34% 98%;
+    --card: 210 9.09% 12.94%;
+    --card-foreground: 334 34% 98%;
+    --border: 334 0% 18.46%;
+    --input: 214.29 5.04% 27.25%;
+    /* --primary: 226.73 58.43% 65.1%; */
+    --primary: 248 53% 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214.29 5.04% 27.25%;
+    --secondary-foreground: 334 0% 100%;
+    --accent: 217.5 9.09% 17.25%;
+    --accent-foreground: 226.73 58.43% 65.1%;
+    --destructive: 358.16 68.78% 53.53%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 217.5 9.09% 17.25%;
+    --chart-1: 226.73 58.43% 65.1%;
+    --chart-2: 214.29 5.04% 27.25%;
+    --chart-3: 217.5 9.09% 17.25%;
+    --chart-4: 214.29 5.04% 30.25%;
+    --chart-5: 226.73 61.43% 65.1%;
+    --radius: 0.5rem;
+  }
+
+  .dark {
+    --background: 217.5 9.09% 17.25%;
+    --foreground: 334 34% 98%;
+    --muted: 210 9.09% 12.94%;
+    --muted-foreground: 334 0% 60.77%;
+    --popover: 210 9.09% 12.94%;
+    --popover-foreground: 334 34% 98%;
+    --card: 210 9.09% 12.94%;
+    --card-foreground: 334 34% 98%;
+    --border: 334 0% 18.46%;
+    --input: 214.29 5.04% 27.25%;
+    /* --primary: 226.73 58.43% 65.1%; */
+    --primary: 248, 53%, 58%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 214.29 5.04% 27.25%;
+    --secondary-foreground: 334 0% 100%;
+    --accent: 217.5 9.09% 17.25%;
+    --accent-foreground: 226.73 58.43% 65.1%;
+    --destructive: 358.16 68.78% 53.53%;
+    --destructive-foreground: 0 0% 100%;
+    --ring: 217.5 9.09% 17.25%;
+    --chart-1: 226.73 58.43% 65.1%;
+    --chart-2: 214.29 5.04% 27.25%;
+    --chart-3: 217.5 9.09% 17.25%;
+    --chart-4: 214.29 5.04% 30.25%;
+    --chart-5: 226.73 61.43% 65.1%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+
+
+  .calendar {
+    @apply p-3 text-center;
+  }
+  .calendar .vc-pane-layout {
+    @apply grid gap-4 max-sm:!grid-cols-1;
+  }
+  .calendar .vc-title {
+    @apply text-sm font-medium relative z-20;
+  }
+  .vc-popover-content-wrapper .vc-popover-content {
+    @apply mt-3 rounded-md max-w-xs border bg-background;
+  }
+  .vc-popover-content-wrapper .vc-nav-header {
+    @apply flex justify-between items-center p-2;
+  }
+  .vc-popover-content-wrapper .vc-nav-items {
+    @apply grid grid-cols-4 gap-2 p-2;
+  }
+  .vc-popover-content-wrapper .vc-nav-items .vc-nav-item {
+    @apply rounded-md px-2 py-1;
+  }
+  .vc-popover-content-wrapper .vc-nav-items .vc-nav-item:hover {
+    @apply text-muted-foreground bg-muted;
+  }
+  .vc-popover-content-wrapper .vc-nav-items .vc-nav-item.is-active {
+    @apply bg-primary text-primary-foreground;
+  }
+  .calendar .vc-pane-header-wrapper {
+    @apply hidden;
+  }
+  .calendar .vc-weeks {
+    @apply mt-4;
+  }
+  .calendar .vc-weekdays {
+    @apply justify-items-center;
+  }
+  .calendar .vc-weekday {
+    @apply text-muted-foreground rounded-md font-normal text-[0.8rem];
+  }
+  .calendar .vc-weeks {
+    @apply w-full space-y-2 flex flex-col [&>_div]:grid [&>_div]:grid-cols-7;
+  }
+  .calendar .vc-day:has(.vc-highlights) {
+    @apply first:rounded-l-md last:rounded-r-md;
+  }
+  .calendar .vc-day.is-today:not(:has(.vc-day-layer)) .vc-day-content {
+    @apply bg-secondary text-primary rounded-md;
+  }
+  .calendar .vc-day:has(.vc-highlight-base-start) {
+    @apply rounded-l-md;
+  }
+  .calendar .vc-day:has(.vc-highlight-base-end) {
+    @apply rounded-r-md;
+  }
+  .calendar .vc-day:has(.vc-highlight-bg-outline):not(:has(.vc-highlight-base-start)):not(:has(.vc-highlight-base-end)) {
+    @apply rounded-md;
+  }
+  .calendar .vc-day-content  {
+    @apply text-center text-sm p-0 relative focus-within:relative focus-within:z-20 inline-flex items-center justify-center ring-offset-background hover:transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 hover:bg-accent hover:text-accent-foreground h-9 w-9 font-normal aria-selected:opacity-100 select-none;
+  }
+  .calendar .vc-day-content:not(.vc-highlight-content-light) {
+    @apply rounded-md;
+  }
+  .calendar .is-not-in-month:not(:has(.vc-highlight-content-solid)):not(:has(.vc-highlight-content-light)):not(:has(.vc-highlight-content-outline)),
+  .calendar .vc-disabled {
+    @apply text-muted-foreground opacity-50;
+  }
+  .calendar .vc-highlight-content-solid, .calendar .vc-highlight-content-outline {
+    @apply bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground;
+  }
+  .calendar .vc-highlight-content-light {
+    @apply bg-accent text-accent-foreground;
+  }
+  .calendar .vc-pane-container.in-transition {
+    @apply overflow-hidden;
+  }
+  .calendar .vc-pane-container {
+    @apply w-full relative;
+  }
+  :root {
+    --vc-slide-translate: 22px;
+    --vc-slide-duration: 0.15s;
+    --vc-slide-timing: ease;
+  }
+  
+  .calendar .vc-fade-enter-active,
+  .calendar .vc-fade-leave-active,
+  .calendar .vc-slide-left-enter-active,
+  .calendar .vc-slide-left-leave-active,
+  .calendar .vc-slide-right-enter-active,
+  .calendar .vc-slide-right-leave-active,
+  .calendar .vc-slide-up-enter-active,
+  .calendar .vc-slide-up-leave-active,
+  .calendar .vc-slide-down-enter-active,
+  .calendar .vc-slide-down-leave-active,
+  .calendar .vc-slide-fade-enter-active,
+  .calendar .vc-slide-fade-leave-active {
+    transition:
+      opacity var(--vc-slide-duration) var(--vc-slide-timing),
+      -webkit-transform var(--vc-slide-duration) var(--vc-slide-timing);
+    transition:
+      transform var(--vc-slide-duration) var(--vc-slide-timing),
+      opacity var(--vc-slide-duration) var(--vc-slide-timing);
+    transition:
+      transform var(--vc-slide-duration) var(--vc-slide-timing),
+      opacity var(--vc-slide-duration) var(--vc-slide-timing),
+      -webkit-transform var(--vc-slide-duration) var(--vc-slide-timing);
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    pointer-events: none;
+  }
+  
+  .calendar .vc-none-leave-active,
+  .calendar .vc-fade-leave-active,
+  .calendar .vc-slide-left-leave-active,
+  .calendar .vc-slide-right-leave-active,
+  .calendar .vc-slide-up-leave-active,
+  .calendar .vc-slide-down-leave-active {
+    position: absolute !important;
+    width: 100%;
+  }
+  
+  .calendar .vc-none-enter-from,
+  .calendar .vc-none-leave-to,
+  .calendar .vc-fade-enter-from,
+  .calendar .vc-fade-leave-to,
+  .calendar .vc-slide-left-enter-from,
+  .calendar .vc-slide-left-leave-to,
+  .calendar .vc-slide-right-enter-from,
+  .calendar .vc-slide-right-leave-to,
+  .calendar .vc-slide-up-enter-from,
+  .calendar .vc-slide-up-leave-to,
+  .calendar .vc-slide-down-enter-from,
+  .calendar .vc-slide-down-leave-to,
+  .calendar .vc-slide-fade-enter-from,
+  .calendar .vc-slide-fade-leave-to {
+    opacity: 0;
+  }
+  
+  .calendar .vc-slide-left-enter-from,
+  .calendar .vc-slide-right-leave-to,
+  .calendar .vc-slide-fade-enter-from.direction-left,
+  .calendar .vc-slide-fade-leave-to.direction-left {
+    -webkit-transform: translateX(var(--vc-slide-translate));
+    transform: translateX(var(--vc-slide-translate));
+  }
+  
+  .calendar .vc-slide-right-enter-from,
+  .calendar .vc-slide-left-leave-to,
+  .calendar .vc-slide-fade-enter-from.direction-right,
+  .calendar .vc-slide-fade-leave-to.direction-right {
+    -webkit-transform: translateX(calc(-1 * var(--vc-slide-translate)));
+    transform: translateX(calc(-1 * var(--vc-slide-translate)));
+  }
+  
+  .calendar .vc-slide-up-enter-from,
+  .calendar .vc-slide-down-leave-to,
+  .calendar .vc-slide-fade-enter-from.direction-top,
+  .calendar .vc-slide-fade-leave-to.direction-top {
+    -webkit-transform: translateY(var(--vc-slide-translate));
+    transform: translateY(var(--vc-slide-translate));
+  }
+  
+  .calendar .vc-slide-down-enter-from,
+  .calendar .vc-slide-up-leave-to,
+  .calendar .vc-slide-fade-enter-from.direction-bottom,
+  .calendar .vc-slide-fade-leave-to.direction-bottom {
+    -webkit-transform: translateY(calc(-1 * var(--vc-slide-translate)));
+    transform: translateY(calc(-1 * var(--vc-slide-translate)));
+  }
+  /**
+   * Timepicker styles
+   */
+  .vc-time-picker {
+    @apply flex flex-col items-center p-2;
+  }
+  .vc-time-picker.vc-invalid {
+    @apply pointer-events-none opacity-50;
+  }
+  .vc-time-picker.vc-attached {
+    @apply border-t border-solid border-secondary mt-2;
+  }
+  .vc-time-picker > * + * {
+    @apply mt-1;
+  }
+  .vc-time-header {
+    @apply flex items-center text-sm font-semibold uppercase mt-1 px-1 leading-6;
+  }
+  .vc-time-select-group {
+    @apply inline-flex items-center px-1 rounded-md bg-primary-foreground border border-solid border-secondary;
+  }
+  .vc-time-select-group .vc-base-icon {
+    @apply mr-1 text-primary stroke-primary;
+  }
+  .vc-time-select-group select {
+    @apply bg-primary-foreground p-1 appearance-none outline-none text-center;
+  }
+  .vc-time-weekday {
+    @apply text-muted-foreground tracking-wide;
+  }
+  .vc-time-month {
+    @apply text-primary ml-2;
+  }
+  .vc-time-day {
+    @apply text-primary ml-1;
+  }
+  .vc-time-year {
+    @apply text-muted-foreground ml-2;
+  }
+  .vc-time-colon {
+    @apply mb-0.5;
+  }
+  .vc-time-decimal {
+    @apply ml-0.5;
+  }
+}

@@ -1,0 +1,36 @@
+import { defineStore } from "pinia";
+import { User } from "@/utils/types";
+import { EXPIRATION_TIME } from "@/utils/constants";
+
+export const useStore = defineStore("app", {
+  state: () => ({
+    user: null as User | null,
+  }),
+  getters: {
+    userData: state => state.user,
+    isLogged: () => !!localStorage.getItem("auth"),
+  },
+  actions: {
+    login(user: User) {
+      const expiresAt = Date.now() + EXPIRATION_TIME;
+      this.$patch({ user });
+      localStorage.setItem("auth", JSON.stringify({ user, expiresAt }));
+    },
+
+    logout() {
+      localStorage.removeItem("auth");
+    },
+
+    checkAuth() {
+      const storedAuth = localStorage.getItem("auth");
+      if (storedAuth) {
+        const { user, expiresAt } = JSON.parse(storedAuth);
+        if (Date.now() < expiresAt) {
+          this.$patch({ user });
+        } else {
+          this.logout();
+        }
+      }
+    },
+  },
+});

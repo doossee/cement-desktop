@@ -1,0 +1,25 @@
+[+] set titles of expanses
+[+] remove currency from purchase form
+[+] input titles sum
+[+] add <- butto  in expanses
+[+] cursor pointer in client table
+[+] remove select text
+[+/+] add filters client / expanses income table
+[+] add font bold and big text in client name
+[+] split function download and select date
+
+[+|=] add currency calc
+[+|=] hide users link for viewers
+[+|=] actions btn move to right side table
+[+|=] add select for download pdf with limited dates (15, month, 6 m, year)
+
+
+[+] add Alert sonner
+[+] auth
+[+] users crud
+[+] add table client side sorting
+[+] check auth
+[+] add role auth
+[+] add logout btn
+
+[-] pdf export [excel import]
