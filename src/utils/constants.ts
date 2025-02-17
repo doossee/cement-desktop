@@ -71,15 +71,22 @@ export const CLIENT_HEADERS = [
     { title: 'Boshqarish', key: 'actions', sorting: false, class: "text-right" },
 ]
 
+export const ANNUAL_EXPENSES_HEADERS = [
+    { title: "Yili", key: 'year', sorting: false },
+    { title: 'Qazri', key: 'purchase', sorting: true },
+    { title: 'To\'langan', key: 'income', sorting: true },
+    { title: "Qolgan qarzi", key: 'total', sorting: true },
+]
+
 export const INCOME_HEADERS = [
-    { title: 'Sana', key: 'created_at', sorting: true },
+    { title: 'Sana', key: 'date', sorting: true },
     { title: 'Summasi', key: 'amount', sorting: true },
     { title: 'Valyuta kursi', key: 'currency', sorting: false },
     { title: "To'lov turi", key: 'method', sorting: false },
 ]
 
 export const PURCHASE_HEADERS = [
-    { title: 'Sana', key: 'created_at', sorting: true },
+    { title: 'Sana', key: 'date', sorting: true },
     // { title: 'Valyuta kursi', key: 'currency', sorting: false },
     { title: 'Qop', key: 'sack_num', sorting: false },
     { title: "Qop narxi", key: 'sack_price', sorting: true },

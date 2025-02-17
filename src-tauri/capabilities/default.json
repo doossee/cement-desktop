@@ -11,6 +11,16 @@
     "sql:default",
     "sql:allow-load",
     "sql:allow-execute",
-    "clipboard:allow-write-files"
+    "clipboard:allow-write-files",
+    "fs:default",
+    {
+      "identifier": "fs:allow-mkdir",
+      "allow": [{"path": "$DOWNLOAD/*"}]
+    },
+    {
+      "identifier": "fs:allow-write-file",
+      "allow": [{"path": "$DOWNLOAD/**/*"}]
+    },
+    "fs:allow-write"
   ]
 }

@@ -57,9 +57,9 @@ const incomeformSchema = toTypedSchema(z.object({
         required_error: "Login kiritlishi shart" })
         .min(1, { message: "Login kiritlishi shart" }),
     password: z.string({
-        invalid_type_error: "Parol 6 ta belgidan katta bo'lishi kerak",
-        required_error: "Parol 6 ta belgidan katta bo'lishi kerak", })
-        .min(6, { message: "Parol 6 ta belgidan katta bo'lishi kerak" })
+        invalid_type_error: "Parol 3 ta belgidan katta bo'lishi kerak",
+        required_error: "Parol 3 ta belgidan katta bo'lishi kerak", })
+        .min(3, { message: "Parol 3 ta belgidan katta bo'lishi kerak" })
 }))
 
 const { handleSubmit, isSubmitting, resetForm } = useForm({

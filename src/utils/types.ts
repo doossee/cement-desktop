@@ -59,17 +59,31 @@ export interface Purchase {
   car_cost?: number | null;
   other_cost?: number | null;
   total_price: number;
+  date: Date;
   created_at: Date;
   updated_at: Date;
 }
 
 export interface Income {
-  id: number;
-  client_id: number;
-  client: Client;
-  amount: number;
-  currency?: number;
-  method: PaymentMethod;
-  created_at: Date;
-  updated_at: Date;
+  id: number
+  date: Date
+  client: Client
+  amount: number
+  created_at: Date
+  updated_at: Date
+  client_id: number
+  currency?: number
+  method: PaymentMethod
+}
+
+export interface AnnualExpenses {
+  id: number
+  year: number
+  total: number
+  client: Client
+  income: number
+  purchase: number
+  created_at: Date
+  updated_at: Date
+  client_id: number
 }

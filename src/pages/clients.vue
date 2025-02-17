@@ -74,6 +74,27 @@
                     </FormItem>
                 </FormField>
 
+                <div v-if="!itemId" class="grid grid-cols-2 gap-2">
+                    <FormField v-slot="{ componentField }" name="purchase">
+                        <FormItem>
+                            <FormLabel>Yillik qarzi</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="Yillik qarzi" v-bind="componentField" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    </FormField>
+                    <FormField v-slot="{ componentField }" name="year">
+                        <FormItem>
+                            <FormLabel>Yil</FormLabel>
+                            <FormControl>
+                                <Input type="number" placeholder="Yil" v-bind="componentField" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    </FormField>
+                </div>
+
                 <Button type="submit" :disabled="isSubmitting">Saqlash</Button>
             </form>
         </DialogContent>
@@ -132,13 +153,13 @@ import { useForm } from 'vee-validate'
 import { Client } from '@/utils/types'
 import { createToast } from '@/lib/toast'
 import { Trash, Pen } from 'lucide-vue-next'
-import { getExpenses } from '@/api/expenses'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toTypedSchema } from '@vee-validate/zod'
 import DataTable from '@/components/data-table.vue'
 import { generateClientPDF } from '@/utils/generate-pdf'
 import DateRangePicker from '@/components/date-range-picker.vue'
+import { getExpenses, createAnnualExpense } from '@/api/expenses'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { getClients, createClient, deleteClient, updateClient, getAllClients } from '@/api/clients'
@@ -157,6 +178,7 @@ const saveLoading = ref(false)
 const items = ref<Client[]>([])
 const itemId = ref<null|number>(null)
 const itemIndex = ref<null|number>(null)
+const currentYear = new Date().getFullYear()
 
 const statuses = computed(() => {
     return [{ title: "BARCHASI", value: "all" }, ...Object.keys(CLIENT_STATUSES).map(k => ({ value: k, title: CLIENT_STATUSES[k] }))]
@@ -165,10 +187,20 @@ const statuses = computed(() => {
 const formSchema = toTypedSchema(z.object({
   name: z.string({ required_error: "Ism familiya kiritilish shart" }).min(2).max(50),
   phone: z.string({ required_error: "Telefon raqam kiritilish shart" }).min(2).max(50),
+
+  purchase: z.number().default(0).optional(),
+  year: z.number().default(currentYear).optional(),
 }))
 
-const { handleSubmit, resetForm, setFieldValue, isSubmitting } = useForm({
+const { handleSubmit, resetForm, setFieldValue, isSubmitting, values } = useForm({
   validationSchema: formSchema,
+  initialValues: {
+    name: "",
+    phone: "",
+
+    purchase: 0,
+    year: currentYear,
+  }
 })
 
 const handleFilterbyStatus = (status: string, cb: any) => {
@@ -207,13 +239,18 @@ const remove = async (id: number, index: number) => {
     }
 }
 
-const create = async (body: Partial<Client>) => {
+const create = async ({ purchase, year, ...body}: Partial<typeof values>) => {
+    if(purchase) Object.assign(body, { balance: -purchase })
     const data = await createClient(body)
+
+    if(purchase && year) {
+        await createAnnualExpense({ purchase, year, client_id: data.id })
+    }
     createToast(ALERT_MESSAGES.DATA_UPDATED, "SUCCESS")
     items.value.push(data)
 }
 
-const update = async (id: number, body: Partial<Client>) => {
+const update = async (id: number, body: Partial<typeof values>) => {
     const data = await updateClient(id, body)
     createToast(ALERT_MESSAGES.DATA_CREATED, "SUCCESS")
     Object.assign(items.value[itemIndex.value!], data)
@@ -222,10 +259,12 @@ const update = async (id: number, body: Partial<Client>) => {
 const save = handleSubmit(async (values) => {
     try {
         saveLoading.value = true
-        if(itemId.value !== null)
-            await update(itemId.value, values)
-        else
+        if(itemId.value !== null) {
+            const { name, phone } = values
+            await update(itemId.value, { name, phone })
+        } else {
             await create(values)
+        }
 
         closeDialog()
     } catch (error) {
@@ -272,17 +311,16 @@ const getReportPeriod = async (type: "today" | "15_days" | "1_month" | "6_months
     handleDownloadUsersExpanses({ start, end });
 }
 
-const handleDownloadUsersExpanses = async ({ start, end }: {start: Date, end: Date}) => {
+const handleDownloadUsersExpanses: any = async ({ start, end }: {start: Date, end: Date}) => {
     const clients = await getAllClients()
 
     clients.items.map(async (client) => {
-        const { incomes, purchases } = await getExpenses({ client_id: client.id, start, end })
+        const { incomes, purchases, annual_expenses } = await getExpenses({ client_id: client.id, start, end })
 
-        generateClientPDF(client, purchases, incomes, start, end)
+        await generateClientPDF(client, purchases, incomes, annual_expenses, start, end)
     })
 
     dialog1.value=false
-
     createToast("Fayllar muvofaqqiyatli yuklandi", "SUCCESS")
 }
 </script>

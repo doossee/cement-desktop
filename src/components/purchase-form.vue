@@ -6,6 +6,16 @@
             </DialogHeader>
 
             <form @submit="handleCreatePurchase" class="grid grid-cols-2 gap-3">
+                <FormField v-slot="{ componentField }" name="date">
+                    <FormItem class="col-span-2">
+                        <FormLabel>Sana</FormLabel>
+                        <FormControl>
+                            <DatePicker v-bind="componentField" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
+
                 <FormField v-slot="{ componentField }" name="sack_num">
                     <FormItem>
                         <FormLabel>Qop donasi</FormLabel>
@@ -86,11 +96,11 @@ import { computed, ref } from 'vue'
 import { useForm } from 'vee-validate'
 import { createToast } from '@/lib/toast'
 import { Input } from '@/components/ui/input'
-// import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { createPurchase } from '@/api/expenses'
 import { toTypedSchema } from '@vee-validate/zod'
 import { ALERT_MESSAGES } from '@/utils/constants'
+import DatePicker from '@/components/data-picker.vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormField, FormItem, FormMessage, FormLabel, FormControl } from '@/components/ui/form'
 
@@ -116,10 +126,22 @@ const purchaseformSchema = toTypedSchema(z.object({
     .min(0, { message: "Sochma 0 dan katta bo'lishi shart" }).default(0),
     scatter_price: z.coerce.number({ invalid_type_error: "Sochma narxi 0 dan katta bo'lishi shart" })
     .min(0, { message: "Sochma narxi 0 dan katta bo'lishi shart" }).default(0),
+    date: z.date({ invalid_type_error: "Sana kiritilish shart",
+    required_error: "Sana kiritilish shart" }).default(new Date())
 }))
 
 const { handleSubmit, isSubmitting, values, setFieldValue } = useForm({
     validationSchema: purchaseformSchema,
+    initialValues: {
+        car_cost: 0,
+        sack_num: 0,
+        other_cost: 0,
+        sack_price: 0,
+        scatter_num: 0,
+        scatter_price: 0,
+        date: new Date(),
+        client_id: clientId,
+    }
 })
 
 const purchaseSumPrice = computed(() => {

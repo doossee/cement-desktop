@@ -1,16 +1,15 @@
 import { createToast } from '@/lib/toast';
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
-// import { writeFile } from '@tauri-apps/plugin-fs';
 import { downloadDir } from '@tauri-apps/api/path';
-import { Client, Income, Purchase } from "./types";
 import { PAYMENT_METHODS } from '@/utils/constants';
 import { writeFiles } from 'tauri-plugin-clipboard-api';
-// import { writeText } from '@tauri-apps/plugin-clipboard-manager';
+import { mkdir, writeFile } from '@tauri-apps/plugin-fs';
+import { Client, Income, Purchase, AnnualExpenses } from "./types";
 
 pdfMake.vfs = pdfFonts.vfs;
 
-export async function generateClientPDF(client: Client, purchases: Purchase[], incomes: Income[], start: Date, end: Date, clipboard?: boolean) {
+export async function generateClientPDF(client: Client, purchases: Purchase[], incomes: Income[], annual_expenses: AnnualExpenses[], start: Date, end: Date, clipboard?: boolean) {
   const docDefinition = {
     content: [
       { text: `Mijoz: ${client.name}`, style: "header" },
@@ -31,6 +30,24 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
         ],
       },
 
+      { text: "Yillik qarzlar", style: "sectionHeader", margin: [0, 10, 0, 10] },
+      {
+        table: {
+          headerRows: 1,
+          widths: ["auto", "auto", "auto", "auto"],
+          body: [
+            ["Yili", "Qazri", "To\'langan", "Qolgan qarzi"],
+            ...annual_expenses.map((a) => [
+                a.year,
+                `${a.purchase} so'm`,
+                `${a.income} so'm`,
+                `${a.total} so'm`,
+            ]),
+          ],
+        },
+        layout: "lightHorizontalLines",
+      },
+
       { text: "Chiqimlar", style: "sectionHeader" },
       {
         table: {
@@ -39,7 +56,7 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
           body: [
             ["Sanasi", "Valyuta kursi", "Qop", "Qop narxi", "Sochma", "Sochma narxi", "Summasi", "Mashina xarajati", "Olgan naqd puli", "Jami summasi"],
             ...purchases.map((p) => [
-                new Date(p.created_at).toLocaleDateString(),
+                new Date(p.date).toLocaleDateString(),
                 p.currency ? p.currency + " so'm" : "-",
                 p.sack_num || "-",
                 p.sack_price ? `${p.sack_price} ${ p.currency ? "$" : "so'm" }` : "-",
@@ -63,7 +80,7 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
           body: [
             ["Sana", "To'lov summasi", "Valyuta kursi", "To'lov turi"],
             ...incomes.map((i) => [
-                new Date(i.created_at).toLocaleDateString(),
+                new Date(i.date).toLocaleDateString(),
                 i.currency ? `${new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(i.amount || 0)} $ | ${new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(i.currency * (i.amount || 0))} so'm` :
                 i.amount.toLocaleString('ru-RU') + " so'm",
                 i.currency ? i.currency + " so'm" : "-",
@@ -80,21 +97,42 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
       sectionHeader: { fontSize: 16, bold: true, margin: [0, 10, 0, 5] },
     },
   };
-
   const pdfDoc = pdfMake.createPdf(docDefinition as any)
   const fileName = `${client.name}_${start.toLocaleDateString().replace(/\//g, '.')}-${end.toLocaleDateString().replace(/\//g, '.')}-${Date.now()}.pdf`;
   
-  pdfDoc.download(fileName);
+  // pdfDoc.download(fileName);
 
-  if(clipboard) {
-    try {
-      const download_dir = await downloadDir()
-      const filePath = `${download_dir}\\${fileName}`;
-      await writeFiles([filePath])
+  const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+  const download_dir = await downloadDir();
+  const folderPath = `${download_dir}\\${today}-xarajatlar`;
+  const filePath = `${folderPath}\\${fileName}`;
+
+  try {
+    // Create the directory if it doesn't exist
+    await mkdir(folderPath, { recursive: true });
+
+    // Get the PDF buffer
+    pdfDoc.getBlob(async (blob: Blob) => {
+      const arrayBuffer = await blob.arrayBuffer();
+      await writeFile(filePath, new Uint8Array(arrayBuffer)).catch((e) => {
+        console.log(e)
+      });
+      
+      createToast(`PDF fayl ${folderPath} papkada saqlandi`, 'SUCCESS');
+    });
+    
+    // pdfDoc.download(`${today}-xarajatlar\\${fileName}`);
+
+    if(clipboard) {
+      console.log(filePath);
+      await writeFiles([filePath]).catch(e => {
+        console.error("PDF buffer error:", e);
+        createToast('PDF faylni buferga joylashda xatolik yuz berdi!', 'WARNING')
+      })
       createToast('PDF fayl buferga joylandi!', 'SUCCESS')
-    } catch (error) {
-      createToast('PDF faylni buferda joylashda xatolik yuz berdi!', 'WARNING')
-      console.error("Ошибка копирования PDF в буфер:", error);
     }
+  } catch(error) {
+    console.error(":", error);
+    createToast('PDF faylni yuklashda xatolik yuz berdi!', 'WARNING')
   }
 }

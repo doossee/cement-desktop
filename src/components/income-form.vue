@@ -6,6 +6,16 @@
             </DialogHeader>
 
             <form @submit="handleCreateIncome" class="grid gap-y-2">
+                <FormField v-slot="{ componentField }" name="date">
+                    <FormItem>
+                        <FormLabel>Sana</FormLabel>
+                        <FormControl>
+                            <DatePicker v-bind="componentField" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
+
                 <FormField v-slot="{ componentField }" name="amount">
                     <FormItem>
                         <FormLabel>To'lov summasi {{ isCurrency?`$ - (${((currency||0) * (values.amount||0)).toLocaleString('ru-RU')} so'm)`:"so'm" }}</FormLabel>
@@ -21,7 +31,7 @@
                         <FormLabel>To'lov turi</FormLabel>
                         <Select v-bind="componentField">
                             <FormControl>
-                                <SelectTrigger>
+                                <SelectTrigger class="w-full">
                                     <SelectValue placeholder="To'lov turini belgilang" />
                                 </SelectTrigger>
                             </FormControl>
@@ -61,6 +71,7 @@ import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { toTypedSchema } from '@vee-validate/zod'
+import DatePicker from '@/components/data-picker.vue'
 import { PAYMENT_METHODS, ALERT_MESSAGES } from '@/utils/constants'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormField, FormItem, FormMessage, FormLabel, FormControl } from '@/components/ui/form'
@@ -85,11 +96,19 @@ const incomeformSchema = toTypedSchema(z.object({
     .min(1, { message: "To'lov summasi kiritlish shart" }).default(0),
     method: z.string({ required_error: "To'lov turi belgilanishi shart",
     invalid_type_error: "To'lov turi belgilanishi shart"})
-    .min(1, { message: "To'lov turi belgilanishi shart" })
+    .min(1, { message: "To'lov turi belgilanishi shart" }),
+    date: z.date({ invalid_type_error: "Sana kiritilish shart",
+    required_error: "Sana kiritilish shart" }).default(new Date())
 }))
 
 const { handleSubmit, isSubmitting, setFieldValue, values } = useForm({
     validationSchema: incomeformSchema,
+    initialValues: {
+        amount: 0,
+        method: "CASH",
+        date: new Date(),
+        client_id: clientId,
+    }
 })
 
 const handleCreateIncome = handleSubmit(async (body) => {

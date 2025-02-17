@@ -101,6 +101,8 @@ export const updateClient = async (id: number, data: Partial<Client>) => {
 export const deleteClient = async (id: number) => {
     const db = await DB
 
+    await db.execute("DELETE FROM purchases WHERE client_id = ?", [id])
+    await db.execute("DELETE FROM incomes WHERE client_id = ?", [id])
     await db.execute("DELETE FROM clients WHERE id = ?", [id])
     return true
 }

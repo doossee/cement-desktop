@@ -109,7 +109,7 @@ const itemIndex = ref<null|number>(null)
     
 const formSchema = toTypedSchema(z.object({
   username: z.string({ required_error: "Login kiritilish shart", invalid_type_error: "Login kiritilishi shart" }).min(1),
-  password: z.string({ required_error: "Parol 6 tadan ko'p belgidan ko'p bo'lishi kerak", invalid_type_error: "Parol kiritilishi shart" }).min(6),
+  password: z.string({ required_error: "Parol 3 tadan ko'p belgidan ko'p bo'lishi kerak", invalid_type_error: "Parol kiritilishi shart" }).min(3),
   role: z.string({ required_error: "Foydalanuvchi roli belgilanishi shart", invalid_type_error: "Foydalanuvchi roli belgilanishi shart" }).min(1).default("VIEWER"),
 }))
 
