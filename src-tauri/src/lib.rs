@@ -1,30 +1,32 @@
 // Learn more about Tauri commands at https://tauri.app/develop/calling-rust/
 use tauri_plugin_sql::{Migration, MigrationKind};
-// use std::fs;
-// use std::path::Path;
+use std::fs;
+use std::path::Path;
 
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
 }
-// #[tauri::command]
-// fn backup_database(arg1: String, arg2: String, arg3: String) -> Result<String, String> {
-//     // Проверяем, существует ли указанная папка, если нет — создаем
-//     let backup_path = Path::new(&arg3);
-//     if !backup_path.exists() {
-//         fs::create_dir_all(backup_path)
-//             .map_err(|e| format!("Ошибка создания папки: {}", e))?;
-//     }
 
-//     // Полный путь к файлу бэкапа
-//     let backup_file_path = backup_path.join(format!("backup_{}.db", arg1));
+#[tauri::command]
+fn backup_database(arg1: String, arg2: String, arg3: String) -> Result<String, String> {
+    // Проверяем, существует ли указанная папка, если нет — создаем
+    // format!("{}, {}, {}", arg1, arg2, arg3);
+    let backup_path = Path::new(&arg3);
+    if !backup_path.exists() {
+        fs::create_dir_all(backup_path)
+            .map_err(|e| format!("Ошибка создания папки: {}", e))?;
+    }
 
-//     // Копируем базу данных
-//     fs::copy(arg2, &backup_file_path)
-//         .map_err(|e| format!("Ошибка копирования файла: {}", e))?;
+    // Полный путь к файлу бэкапа
+    let backup_file_path = backup_path.join(format!("backup_{}.db", arg1));
 
-//     Ok(backup_file_path.to_string_lossy().to_string()) // Возвращаем путь к бэкапу
-// }
+    // Копируем базу данных
+    fs::copy(arg2, &backup_file_path)
+        .map_err(|e| format!("Ошибка копирования файла: {}", e))?;
+
+    Ok(backup_file_path.to_string_lossy().to_string()) // Возвращаем путь к бэкапу
+}
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -112,7 +114,7 @@ pub fn run() {
         )
         .plugin(tauri_plugin_opener::init())
         .invoke_handler(tauri::generate_handler![greet])
-        // .invoke_handler(tauri::generate_handler![backup_database])
+        .invoke_handler(tauri::generate_handler![backup_database])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }
