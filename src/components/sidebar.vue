@@ -11,7 +11,7 @@
         </div>
 
         <div class="flex flex-col gap-2">
-            <!-- <BackupBtn /> -->
+            <BackupBtn />
             <!-- <ThemeToggler /> -->
             <Button @click="handleLogout" variant="outline" size="icon">
                 <LogOut />
@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { useStore } from '@/store'
 import { useRouter } from 'vue-router'
-// import BackupBtn from './backup-btn.vue'
+import BackupBtn from './backup-btn.vue'
 import { LogOut } from 'lucide-vue-next'
 import { LINKS } from '@/utils/constants'
 import { createToast } from '@/lib/toast'

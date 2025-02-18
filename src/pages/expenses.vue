@@ -177,9 +177,9 @@
 
 <script setup lang="ts">
 import { useStore } from '@/store'
-import { ref, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { getExpenses } from '@/api/expenses'
+import { ref, computed, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
 import DataTable from '@/components/data-table.vue'
 import IncomeForm from '@/components/income-form.vue'
@@ -322,5 +322,7 @@ const getReportPeriod = async (type: "15_days" | "1_month" | "6_months" | "1_yea
     await getItems({ start, end })
 }
 
-getItems(dateFilter.value)
+onMounted(() => {
+    getItems(dateFilter.value)
+})
 </script>

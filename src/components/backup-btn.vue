@@ -21,7 +21,7 @@ const handleBackup = async () => {
         const document_path = await documentDir();
     
         const backup_dir = document_path + "\\MyBackups"
-        const db_path = `${app_data}\\Roaming\\com.tauri-app.app\\database.db`
+        const db_path = `${app_data}\\database.db`
         
         const client_date = new Date().toISOString().replace(/[:.]/g, "-").toString()
     

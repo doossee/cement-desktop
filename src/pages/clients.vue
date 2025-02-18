@@ -312,13 +312,19 @@ const getReportPeriod = async (type: "today" | "15_days" | "1_month" | "6_months
 }
 
 const handleDownloadUsersExpanses: any = async ({ start, end }: {start: Date, end: Date}) => {
-    const clients = await getAllClients()
+    const { items } = await getAllClients()
 
-    clients.items.map(async (client) => {
+    items.map(async (client) => {
         const { incomes, purchases, annual_expenses } = await getExpenses({ client_id: client.id, start, end })
 
         await generateClientPDF(client, purchases, incomes, annual_expenses, start, end)
     })
+
+    // for(let i = 0; i < items.length - 1; i++) {
+    //     const { incomes, purchases, annual_expenses } = await getExpenses({ client_id: items[i].id, start, end })
+
+    //     await generateClientPDF(items[i], purchases, incomes, annual_expenses, start, end)
+    // }
 
     dialog1.value=false
     createToast("Fayllar muvofaqqiyatli yuklandi", "SUCCESS")
