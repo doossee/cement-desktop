@@ -27,7 +27,7 @@
                                 <span v-show="loading">Yuklanmoqda...</span>
                             </TableCell>
                         </TableRow>
-                        <TableRow v-for="item,i in _items" :key="i" @click="emits('rowClick', item, i)" :class="cn('hover:bg-gray-100/5', trClass||'')">
+                        <TableRow v-for="item,i in totalItem ? [..._items, totalItem] : _items" :key="i" @click="emits('rowClick', item, i)" :class="cn('hover:bg-gray-100/5', trClass||'')">
                             <TableCell v-for="header,j in headers" :key="j" class="p-2" :class="header.sorting?'!px-4':''">
                                 <slot v-if="$slots[`item.${header.key.toString()}`]" :item="item" :index="i" :name="`item.${header.key.toString()}`" />
                                 <span v-else>{{ (item as any)[header.key] }}</span>
@@ -76,7 +76,7 @@ import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from '@/components/ui/select'
 
 const emits = defineEmits(['fetching','searched','rowClick'])
-const { count, headers, hideBottom, hideSearch, items, loading, clientSide, trClass, hideTop } = defineProps<DataTableProps<T>>()
+const { count, headers, hideBottom, hideSearch, items, loading, clientSide, trClass, hideTop, totalItem } = defineProps<DataTableProps<T>>()
 
 const page = ref(1)
 const limit = ref(20)

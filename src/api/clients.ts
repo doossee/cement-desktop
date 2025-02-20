@@ -6,7 +6,7 @@ interface ClientFilterParams {
     limit: number
     search?: string
     sorting?: Partial<Record<keyof Client, "asc" | "desc">>
-    filters?: Partial<Record<keyof Pick<Client, 'id' | 'status'> | 'startDate' | 'endDate', number | string>>
+    filters?: Partial<Record<keyof Pick<Client, 'id' | 'status' | 'type'> | 'startDate' | 'endDate', number | string>>
 }
 
 export const getClients = async ({ limit = 10, page = 1, search = '', sorting = {}, filters = {} }: ClientFilterParams) => {
@@ -28,6 +28,11 @@ export const getClients = async ({ limit = 10, page = 1, search = '', sorting = 
     if (filters.status) {
         whereClauses.push("status = ?")
         params.push(filters.status)
+    }
+
+    if (filters.type) {
+        whereClauses.push("type = ?")
+        params.push(filters.type)
     }
     
     if (filters.startDate && filters.endDate) {
@@ -70,10 +75,10 @@ export const getAllClients = async () => {
 export const createClient = async (data: Partial<Client>) => {
     const db = await DB
 
-    const { name, phone, status, balance } = data
+    const { name, phone, status, balance, type, initial_debt, initial_debt_year } = data
     await db.execute(
-        "INSERT INTO clients (name, phone, status, balance, created_at, updated_at) VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-        [name, phone, status || 'CLEAR', balance || 0]
+        "INSERT INTO clients (name, phone, status, balance, type, initial_debt, initial_debt_year, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        [name, phone, status || 'CLEAR', balance || 0, type, initial_debt || null, initial_debt_year || null]
     )
 
     const [newClient]: any = await db.select(`

@@ -1,5 +1,5 @@
 import { Users, Shield } from 'lucide-vue-next'
-import type { ClientStatus, PaymentMethod, Role } from './types'
+import type { ClientStatus, PaymentMethod, Role, ClientType } from './types'
 
 export const EXPIRATION_TIME = 3 * 60 * 60 * 1000;
 
@@ -13,6 +13,7 @@ export const ALERT_MESSAGES = {
     LOGIN_SUCCESS: "Muvaffaqiyatli kirildi!",
     LOGIN_FAILED: "Login yoki parol noto'g'ri!",
     PERMISSION_REQUIRED: "Ruxsat talab qilinadi!",
+    ALREADY_EXISTS: "Ushbu login allaqachon egallangan!",
     SERVER_ERROR: "Serverda xatolik yuz berdi!",
     OPERATION_FAILED: "Amal bajarilmadi!",
     OPERATION_SUCCESS: "Amal muvaffaqiyatli bajarildi!",
@@ -34,10 +35,20 @@ export const CLIENT_STATUSES: Record<ClientStatus, string> = {
     DEBT: "QARZI BOR",
 }
 
+export const CLIENT_TYPES: Record<ClientType, string> = {
+    BIG: "Katta qarzdor",
+    DAILY: "Kunlik qarzdor"
+}
+
 export const CLIENT_STATUS_COLORS: Record<ClientStatus, string> = {
     CLEAR: "text-white bg-green-600",
     OWED: "text-white bg-blue-600",
     DEBT: "text-white bg-orange-600",
+}
+
+export const CLIENT_TYPE_COLORS: Record<ClientType, string> = {
+    BIG: "text-white bg-green-600",
+    DAILY: "text-white bg-blue-600",
 }
 
 export const PAYMENT_METHODS: Record<PaymentMethod, string> = {
@@ -60,6 +71,7 @@ export const USER_HEADERS = [
     { title: 'Login', key: 'username', sorting: true },
     { title: "Roli", key: 'role', sorting: false },
     { title: "Kiritilgan sanasi", key: 'created_at', sorting: true },
+    { title: "Oxirgi kirgan vaqti", key: 'last_login', sorting: false },
     { title: 'Boshqarish', key: 'actions', sorting: false, class: "text-right" },
 ]
 
@@ -67,15 +79,10 @@ export const CLIENT_HEADERS = [
     { title: 'Ismi', key: 'name', sorting: true },
     { title: 'Telefon Raqami', key: 'phone', sorting: false },
     { title: "Mablag'i", key: 'balance', sorting: true },
+    { title: "Qarzdorligi", key: 'debt', sorting: false },
     { title: "Holati", key: 'status', sorting: false },
+    { title: "Turi", key: 'type', sorting: false },
     { title: 'Boshqarish', key: 'actions', sorting: false, class: "text-right" },
-]
-
-export const ANNUAL_EXPENSES_HEADERS = [
-    { title: "Yili", key: 'year', sorting: false },
-    { title: 'Qazri', key: 'purchase', sorting: true },
-    { title: 'To\'langan', key: 'income', sorting: true },
-    { title: "Qolgan qarzi", key: 'total', sorting: true },
 ]
 
 export const INCOME_HEADERS = [

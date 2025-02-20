@@ -2,89 +2,80 @@ import { createToast } from '@/lib/toast';
 import pdfMake from "pdfmake/build/pdfmake";
 import pdfFonts from "pdfmake/build/vfs_fonts";
 import { downloadDir } from '@tauri-apps/api/path';
+import { Client, Income, Purchase } from "./types";
 import { PAYMENT_METHODS } from '@/utils/constants';
 import { writeFiles } from 'tauri-plugin-clipboard-api';
 import { mkdir, writeFile } from '@tauri-apps/plugin-fs';
-import { Client, Income, Purchase, AnnualExpenses } from "./types";
 
 pdfMake.vfs = pdfFonts.vfs;
 
-export async function generateClientPDF(client: Client, purchases: Purchase[], incomes: Income[], annual_expenses: AnnualExpenses[], start: Date, end: Date, clipboard?: boolean) {
+export async function generateClientPDF(client: Client, purchases: Purchase[], incomes: Income[], start: Date, end: Date, clipboard?: boolean) {
   const docDefinition = {
+    pageSize: 'A4', // Можно A3, A4, A5 и т. д.
+    pageOrientation: 'landscape',
     content: [
-      { text: `Mijoz: ${client.name}`, style: "header" },
+      { text: `Mijoz: ${client.name}`, style: "subheader" },
       { text: `Telefon: ${client.phone || "Mavjud emas"}`, style: "subheader" },
       {
         text: [
-          { text: "Баланс: ", style: "subheader", color: "black" },
+          { text: "Balansi: ", style: "subheader", color: "black" },
           { 
-            text: `${client.balance} `, 
+            text: (client.balance - (client.initial_debt || 0)).toLocaleString('ru-RU'), 
             style: "subheader",
-            color: client.balance < 0 
+            color: (client.balance - (client.initial_debt || 0)) < 0 
               ? "#f54a00" 
-              : client.balance === 0 
+              : (client.balance - (client.initial_debt || 0)) === 0 
               ? "black" 
               : "#008236"
           },
-          { text: "so'm", style: "subheader", color: "black" }
+          { text: " so'm", style: "subheader", color: "black" }
         ],
       },
-
-      { text: "Yillik qarzlar", style: "sectionHeader", margin: [0, 10, 0, 10] },
+      // {
+      //   text: CLIENT_TYPES[client.type], style: "subheader", color: "black"
+      // },
       {
-        table: {
-          headerRows: 1,
-          widths: ["auto", "auto", "auto", "auto"],
-          body: [
-            ["Yili", "Qazri", "To\'langan", "Qolgan qarzi"],
-            ...annual_expenses.map((a) => [
-                a.year,
-                `${a.purchase} so'm`,
-                `${a.income} so'm`,
-                `${a.total} so'm`,
-            ]),
-          ],
-        },
-        layout: "lightHorizontalLines",
+        text: client.initial_debt ? `${client.initial_debt_year} yilda qolgan qarzi: ${client.initial_debt.toLocaleString('ru-RU')} s'om` : '', style: "subheader", color: "black"
       },
 
       { text: "Chiqimlar", style: "sectionHeader" },
       {
         table: {
           headerRows: 1,
-          widths: ["auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto"],
+          widths: ["auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto"],
           body: [
-            ["Sanasi", "Valyuta kursi", "Qop", "Qop narxi", "Sochma", "Sochma narxi", "Summasi", "Mashina xarajati", "Olgan naqd puli", "Jami summasi"],
-            ...purchases.map((p) => [
-                new Date(p.date).toLocaleDateString(),
-                p.currency ? p.currency + " so'm" : "-",
-                p.sack_num || "-",
-                p.sack_price ? `${p.sack_price} ${ p.currency ? "$" : "so'm" }` : "-",
-                p.scatter_num || "-",
-                p.scatter_price ? `${p.scatter_price} ${ p.currency ? "$" : "so'm" }` : "-",
-                `${p.sum_price} so'm`,
-                p.car_cost ? `${p.car_cost} ${ p.currency ? "$" : "so'm" }` : "-",
-                p.other_cost ? `${p.other_cost} ${ p.currency ? "$" : "so'm" }` : "-",
-                `${p.total_price} so'm`,
+            ["Sanasi", "Qop", "Qop narxi", "Sochma", "Sochma narxi", "Summasi", "Mashina xarajati", "Olgan naqd puli", "Jami summasi"],
+            ...purchases
+            .map((p) => [
+                p.date ? new Date(p.date).toLocaleDateString() : "Jami: ",
+                p.sack_num || "0",
+                p.sack_price ? `${p.sack_price.toLocaleString('ru-RU')} ${ p?.currency ? "$" : "so'm" }` : "0",
+                p.scatter_num || "0",
+                p.scatter_price ? `${p.scatter_price.toLocaleString('ru-RU')} ${ p?.currency ? "$" : "so'm" }` : "0",
+                `${p.sum_price?.toLocaleString('ru-RU') || 0} so'm`,
+                p.car_cost ? `${p.car_cost.toLocaleString('ru-RU')} ${ p?.currency ? "$" : "so'm" }` : "0",
+                p.other_cost ? `${p.other_cost.toLocaleString('ru-RU')} ${ p?.currency ? "$" : "so'm" }` : "0",
+                `${p.total_price?.toLocaleString('ru-RU') || 0} so'm`,
             ]),
           ],
         },
         layout: "lightHorizontalLines",
       },
 
-      { text: "Kirimlar", style: "sectionHeader", margin: [0, 10, 0, 10] },
+      { text: "Kirimlar", style: "sectionHeader", margin: [0, 5, 0, 5] },
       {
         table: {
           headerRows: 1,
           widths: ["auto", "auto", "auto", "auto"],
           body: [
             ["Sana", "To'lov summasi", "Valyuta kursi", "To'lov turi"],
-            ...incomes.map((i) => [
-                new Date(i.date).toLocaleDateString(),
+            ...incomes
+            .map((i) => [
+                i.date ? new Date(i.date).toLocaleDateString() : "Jami: ",
                 i.currency ? `${new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(i.amount || 0)} $ | ${new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(i.currency * (i.amount || 0))} so'm` :
-                i.amount.toLocaleString('ru-RU') + " so'm",
+                (i.amount?.toLocaleString('ru-RU') || 0) + " so'm",
                 i.currency ? i.currency + " so'm" : "-",
-                PAYMENT_METHODS[i.method],
+                i.method ? PAYMENT_METHODS[i.method] : '-',
             ]),
           ],
         },
@@ -92,11 +83,12 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
       },
     ],
     styles: {
-      header: { fontSize: 18, bold: true, margin: [0, 0, 0, 10] },
-      subheader: { fontSize: 14, bold: true, margin: [0, 0, 0, 5] },
-      sectionHeader: { fontSize: 16, bold: true, margin: [0, 10, 0, 5] },
+      header: { fontSize: 16, bold: true, margin: [0, 0, 0, 5] },
+      subheader: { fontSize: 12, bold: true, margin: [0, 0, 0, 5] },
+      sectionHeader: { fontSize: 14, bold: true, margin: [0, 20, 0, 5] },
     },
   };
+
   const pdfDoc = pdfMake.createPdf(docDefinition as any)
   const fileName = `${client.name}_${start.toLocaleDateString().replace(/\//g, '.')}-${end.toLocaleDateString().replace(/\//g, '.')}-${Date.now()}.pdf`;
   

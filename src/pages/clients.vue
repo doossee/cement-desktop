@@ -22,15 +22,37 @@
                     </SelectGroup>
                 </SelectContent>
             </Select>
-            <Button @click="() => dialog1=true">Barcha ma'lumotlarini yuklash</Button>
-            <Button v-if="store.userData?.role === 'ADMIN'" @click="() => dialog=true">Yangi mijoz kiritish</Button>
+            <Select @update:model-value="handleFilterbyType($event, handleFetch)">
+                <SelectTrigger>
+                    <SelectValue placeholder="Turi bo'yicha saralash" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectGroup>
+                        <SelectItem v-for="v,i in types" :key="i" :value="v.value">
+                            {{ v.title }}
+                        </SelectItem>
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
+            <div class="flex items-center gap-2">
+                <Button @click="() => dialog1=true" size="icon">
+                    <Download />
+                </Button>
+                <Button v-if="store.userData?.role === 'ADMIN'" @click="() => dialog=true" class="flex-1">Yangi mijoz kiritish</Button>
+            </div>
         </template>
         <template #item.status="{item}">
             <span class="px-2 py-1 rounded-md" :class="CLIENT_STATUS_COLORS[item.status]">{{ CLIENT_STATUSES[item.status] }}</span>
         </template>
+        <template #item.type="{item}">
+            <span class="px-2 py-1 rounded-md" :class="CLIENT_TYPE_COLORS[item.type]">{{ CLIENT_TYPES[item.type] }}</span>
+        </template>
+        <template #item.debt="{item}">
+            {{ item.initial_debt ? `${item.initial_debt_year} yilda qolgan qarzi: ${item.initial_debt.toLocaleString('ru-RU')} s'om` : '-' }}
+        </template>
         <template #item.balance="{item}">
-            <span :class="item.balance>0?'text-[#008040]':(item.balance<0?'text-[#D93333]':'')">
-                {{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.balance) }} so'm
+            <span :class="(item.balance - (item.initial_debt || 0))>0?'text-[#008040]':((item.balance - (item.initial_debt || 0))<0?'text-[#D93333]':'')">
+                {{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format((item.balance - (item.initial_debt || 0))) }} so'm
             </span>
         </template>
         <template #item.actions="{ item, index }">
@@ -74,8 +96,29 @@
                     </FormItem>
                 </FormField>
 
-                <div v-if="!itemId" class="grid grid-cols-2 gap-2">
-                    <FormField v-slot="{ componentField }" name="purchase">
+                <FormField v-slot="{ componentField }" name="type">
+                    <FormItem>
+                        <FormLabel>Mijoz turini belgilang</FormLabel>
+                        <Select v-bind="componentField">
+                            <FormControl>
+                                <SelectTrigger class="w-full">
+                                    <SelectValue placeholder="Mijoz turini belgilang" />
+                                </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                                <SelectGroup>
+                                    <SelectItem v-for="t,i in types.slice(1, 3)" :key="i" :value="t.value">
+                                        {{ t.title }}
+                                    </SelectItem>
+                                </SelectGroup>
+                            </SelectContent>
+                        </Select>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
+
+                <div class="grid grid-cols-2 gap-2">
+                    <FormField v-slot="{ componentField }" name="initial_debt">
                         <FormItem>
                             <FormLabel>Yillik qarzi</FormLabel>
                             <FormControl>
@@ -84,7 +127,7 @@
                             <FormMessage />
                         </FormItem>
                     </FormField>
-                    <FormField v-slot="{ componentField }" name="year">
+                    <FormField v-slot="{ componentField }" name="initial_debt_year">
                         <FormItem>
                             <FormLabel>Yil</FormLabel>
                             <FormControl>
@@ -152,21 +195,21 @@ import { ref, computed } from 'vue'
 import { useForm } from 'vee-validate'
 import { Client } from '@/utils/types'
 import { createToast } from '@/lib/toast'
-import { Trash, Pen } from 'lucide-vue-next'
+import { getExpenses } from '@/api/expenses'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toTypedSchema } from '@vee-validate/zod'
 import DataTable from '@/components/data-table.vue'
+import { Trash, Pen, Download } from 'lucide-vue-next'
 import { generateClientPDF } from '@/utils/generate-pdf'
 import DateRangePicker from '@/components/date-range-picker.vue'
-import { getExpenses, createAnnualExpense } from '@/api/expenses'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { getClients, createClient, deleteClient, updateClient, getAllClients } from '@/api/clients'
-import { CLIENT_STATUSES, CLIENT_HEADERS, ALERT_MESSAGES, CLIENT_STATUS_COLORS } from '@/utils/constants'
 import { CalendarClock, Calendar, CalendarFold, CalendarDays, CalendarRange, CalendarCheck } from 'lucide-vue-next'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { CLIENT_STATUSES, CLIENT_HEADERS, ALERT_MESSAGES, CLIENT_STATUS_COLORS, CLIENT_TYPES, CLIENT_TYPE_COLORS } from '@/utils/constants'
 
 const store = useStore()
 
@@ -179,33 +222,48 @@ const items = ref<Client[]>([])
 const itemId = ref<null|number>(null)
 const itemIndex = ref<null|number>(null)
 const currentYear = new Date().getFullYear()
+const userInitialValues = {
+    name: "",
+    phone: "",
+    type: "DAILY",
+
+    initial_debt: 0,
+    initial_debt_year: currentYear,
+}
 
 const statuses = computed(() => {
     return [{ title: "BARCHASI", value: "all" }, ...Object.keys(CLIENT_STATUSES).map(k => ({ value: k, title: CLIENT_STATUSES[k] }))]
 })
+
+const types = computed(() => {
+    return [{ title: "BARCHASI", value: "all" }, ...Object.keys(CLIENT_TYPES).map(k => ({ value: k, title: CLIENT_TYPES[k] }))]
+})
     
 const formSchema = toTypedSchema(z.object({
-  name: z.string({ required_error: "Ism familiya kiritilish shart" }).min(2).max(50),
-  phone: z.string({ required_error: "Telefon raqam kiritilish shart" }).min(2).max(50),
+  name: z.string({ required_error: "Ism familiya kiritilish shart", invalid_type_error: "Ism familiya kiritilish shart" })
+    .min(2, { message: "Ism familiya kiritilish shart" }).max(50),
+  phone: z.string({ required_error: "Telefon raqam kiritilish shart", invalid_type_error: "Telefon raqam kiritilish shart" })
+    .min(2, { message: "Telefon raqam kiritilish shart" }).max(50),
+  type: z.string({ required_error: "Mijoz turi beligilanishi shart", invalid_type_error: "Mijoz turi beligilanishi shart" })
+    .min(2, { message: "Mijoz turi beligilanishi shart" }).max(50).nonempty(),
 
-  purchase: z.number().default(0).optional(),
-  year: z.number().default(currentYear).optional(),
+  initial_debt: z.number().default(0).optional(),
+  initial_debt_year: z.number().default(currentYear).optional(),
 }))
 
 const { handleSubmit, resetForm, setFieldValue, isSubmitting, values } = useForm({
   validationSchema: formSchema,
-  initialValues: {
-    name: "",
-    phone: "",
-
-    purchase: 0,
-    year: currentYear,
-  }
+  initialValues: userInitialValues
 })
 
 const handleFilterbyStatus = (status: string, cb: any) => {
     if(status === "all") cb()
     else cb({ filters: { status } })
+}
+
+const handleFilterbyType = (type: string, cb: any) => {
+    if(type === "all") cb()
+    else cb({ filters: { type } })
 }
 
 const getItems = async (params: any) => {
@@ -224,7 +282,10 @@ const editItem = (item: Client, index: number) => {
     itemIndex.value = index
 
     setFieldValue('name', item.name)
+    setFieldValue('type', item.type!)
     setFieldValue('phone', item.phone!)
+    setFieldValue('initial_debt', item.initial_debt!)
+    setFieldValue('initial_debt_year', item.initial_debt_year!)
 }
 
 const remove = async (id: number, index: number) => {
@@ -239,13 +300,9 @@ const remove = async (id: number, index: number) => {
     }
 }
 
-const create = async ({ purchase, year, ...body}: Partial<typeof values>) => {
-    if(purchase) Object.assign(body, { balance: -purchase })
+const create = async (body: Partial<typeof values>) => {
     const data = await createClient(body)
 
-    if(purchase && year) {
-        await createAnnualExpense({ purchase, year, client_id: data.id })
-    }
     createToast(ALERT_MESSAGES.DATA_UPDATED, "SUCCESS")
     items.value.push(data)
 }
@@ -260,8 +317,7 @@ const save = handleSubmit(async (values) => {
     try {
         saveLoading.value = true
         if(itemId.value !== null) {
-            const { name, phone } = values
-            await update(itemId.value, { name, phone })
+            await update(itemId.value, values)
         } else {
             await create(values)
         }
@@ -276,11 +332,13 @@ const save = handleSubmit(async (values) => {
 })
 
 const closeDialog = () => {
+    if(!dialog.value) return
+    
     itemId.value = null
     dialog.value = false
     itemIndex.value = null
 
-    resetForm()
+    resetForm({ values: userInitialValues })
 }
 
 const getReportPeriod = async (type: "today" | "15_days" | "1_month" | "6_months" | "1_year") => {
@@ -315,16 +373,15 @@ const handleDownloadUsersExpanses: any = async ({ start, end }: {start: Date, en
     const { items } = await getAllClients()
 
     items.map(async (client) => {
-        const { incomes, purchases, annual_expenses } = await getExpenses({ client_id: client.id, start, end })
-
-        await generateClientPDF(client, purchases, incomes, annual_expenses, start, end)
+        const { incomes, purchases, totalIncomes, totalPurchase } = await getExpenses({ client_id: client.id, start, end })
+        console.log(incomes, purchases, totalIncomes, totalPurchase);
+        
+        await generateClientPDF(
+            client,
+            totalPurchase ? [...purchases, totalPurchase] : purchases, 
+            totalIncomes ? [...incomes, totalIncomes] : incomes,
+            start, end)
     })
-
-    // for(let i = 0; i < items.length - 1; i++) {
-    //     const { incomes, purchases, annual_expenses } = await getExpenses({ client_id: items[i].id, start, end })
-
-    //     await generateClientPDF(items[i], purchases, incomes, annual_expenses, start, end)
-    // }
 
     dialog1.value=false
     createToast("Fayllar muvofaqqiyatli yuklandi", "SUCCESS")

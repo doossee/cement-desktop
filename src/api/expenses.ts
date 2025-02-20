@@ -1,5 +1,5 @@
 import { DB } from '@/utils/sql'
-import { Purchase, Income, Client, AnnualExpenses } from '@/utils/types'
+import { Purchase, Income, Client } from '@/utils/types'
 
 interface ExpenseFilterParams {
     end: Date
@@ -15,7 +15,20 @@ export const getExpenses = async ({ client_id, start, end }: ExpenseFilterParams
     const [client]: any = await db.select<Client[]>("SELECT * FROM clients WHERE id = ?", [client_id]);
 
     const purchases = await db.select<Purchase[]>(`
-        SELECT * FROM purchases 
+        SELECT * FROM purchases
+        WHERE client_id = ? AND created_at BETWEEN ? AND ? 
+    `, [client_id, start.toISOString(), end.toISOString()]);
+
+    const [totalPurchase] = await db.select<Purchase[]>(`
+        SELECT SUM(sack_num) as sack_num, 
+            SUM(sack_price) as sack_price, 
+            SUM(scatter_num) as scatter_num, 
+            SUM(scatter_price) as scatter_price, 
+            SUM(sum_price) as sum_price, 
+            SUM(car_cost) as car_cost, 
+            SUM(other_cost) as other_cost, 
+            SUM(total_price) as total_price
+        FROM purchases
         WHERE client_id = ? AND created_at BETWEEN ? AND ? 
     `, [client_id, start.toISOString(), end.toISOString()]);
 
@@ -24,11 +37,17 @@ export const getExpenses = async ({ client_id, start, end }: ExpenseFilterParams
         WHERE client_id = ? AND created_at BETWEEN ? AND ? 
     `, [client_id, start.toISOString(), end.toISOString()]);
 
-    const annual_expenses = await db.select<AnnualExpenses[]>(`
-        SELECT * FROM annual_expenses WHERE client_id = ?
-    `, [client_id]);
+    const [totalIncomes] = await db.select<Income[]>(`
+        SELECT SUM(
+            CASE 
+                WHEN currency IS NULL OR currency = 0 OR currency = 1 THEN amount 
+                ELSE amount * currency 
+            END
+        ) as amount FROM incomes 
+        WHERE client_id = ? AND created_at BETWEEN ? AND ? 
+    `, [client_id, start.toISOString(), end.toISOString()]);
 
-    return { client, purchases, incomes, annual_expenses };
+    return { client, purchases, incomes, totalPurchase, totalIncomes };
 };
 
 export const createPurchase = async (data: Partial<Purchase>) => {
@@ -50,19 +69,6 @@ export const createPurchase = async (data: Partial<Purchase>) => {
     const [newPurchase]: any = await db.select(`
         SELECT * FROM purchases WHERE client_id = $1 ORDER BY id DESC LIMIT 1
     `, [data.client_id]);
-
-
-    // yearly
-    const year = data.date?.getFullYear();
-    
-    // Создаём запись в annual_expenses, если её нет
-    const ae_id = await createOrGet(data.client_id!, year!)
-
-    await db.execute(`
-        UPDATE annual_expenses
-        SET total = total - $1, purchase = purchase + $1, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $2
-    `, [data.total_price, ae_id]);
     
     return newPurchase
 };
@@ -86,50 +92,31 @@ export const createIncome = async (data: Partial<Income>) => {
         SELECT * FROM incomes WHERE client_id = $1 ORDER BY id DESC LIMIT 1
     `, [data.client_id]);
 
-
-    // yearly
-    const year = data.date?.getFullYear();
-    
-    // Создаём запись в annual_expenses, если её нет
-    const ae_id = await createOrGet(data.client_id!, year!)
-
-    // Обновляем доход в annual_expenses
-    await db.execute(`
-        UPDATE annual_expenses
-        SET total = total + $1, income = income + $1, updated_at = CURRENT_TIMESTAMP
-        WHERE id = $2
-    `, [incomeAmount, ae_id]);
-
     return newPurchase
 };
 
-export const createAnnualExpense = async (data: Partial<AnnualExpenses>) => {
+export const updatePurchase = async (id: number, data: Partial<Purchase>) => {
     const db = await DB
-    
-    await db.execute(`
-        INSERT INTO annual_expenses (client_id, year, total, income, purchase, created_at, updated_at)
-        VALUES ($1, $2, $3, 0, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `, [data.client_id, data.year, -1 * data.purchase!, data.purchase]);
 
-    return true
+    const fields = Object.keys(data).map((key) => `${key} = ?`).join(", ")
+    const values = Object.values(data)
+    values.push(id)
+    
+    await db.execute(`UPDATE purchases SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values)
+    const [updatedClient]: any = await db.select(`SELECT * FROM purchases WHERE id = ?`, [id]);
+
+    return updatedClient
 };
 
-export const createOrGet = async (client_id: number, year: number) => {
+export const updateIncome = async (id: number, data: Partial<Income>) => {
     const db = await DB
 
-    const [ae] = await db.select<AnnualExpenses[]>(`SELECT * FROM annual_expenses WHERE client_id = $1 AND year = $2`,
-        [client_id, year])
-
-    if(ae) return ae.id
+    const fields = Object.keys(data).map((key) => `${key} = ?`).join(", ")
+    const values = Object.values(data)
+    values.push(id)
     
-    await db.execute(`
-        INSERT INTO annual_expenses (client_id, year, total, income, purchase, created_at, updated_at)
-        VALUES ($1, $2, 0, 0, 0, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `, [client_id, year]);
+    await db.execute(`UPDATE incomes SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values)
+    const [updatedClient]: any = await db.select(`SELECT * FROM incomes WHERE id = ?`, [id]);
 
-    const [newAE]: any = await db.select<AnnualExpenses[]>(`
-        SELECT * FROM annual_expenses  WHERE client_id = $1 AND year = $2 ORDER BY id DESC LIMIT 1
-    `, [client_id, year])
-
-    return newAE.id
+    return updatedClient
 };

@@ -1,5 +1,5 @@
 <template>
-  <div class="fixed bottom-4 left-4 z-50">
+  <div>
     <DropdownMenu>
       <DropdownMenuTrigger as-child>
         <Button size="icon">

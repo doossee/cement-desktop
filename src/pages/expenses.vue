@@ -42,41 +42,27 @@
 
                     <Popover>
                         <PopoverTrigger as-child>
-                            <div class="py-1.5 px-3 rounded-md cursor-pointer" :class="client?.balance!>0?'bg-[#008040] hover:bg-[#009032]':(client?.balance!<0?'bg-[#D93333] hover:bg-[#e94433]':'bg-white/10 hover:bg-white/20')">
+                            <div class="py-1.5 px-3 rounded-md cursor-pointer" :class="((client?.balance||0) - (client?.initial_debt || 0))!>0?'bg-[#008040] hover:bg-[#009032]':(((client?.balance||0) - (client?.initial_debt || 0))<0?'bg-[#D93333] hover:bg-[#e94433]':'bg-white/10 hover:bg-white/20')">
                                 Balansi:
-                                {{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(client?.balance||0) }}
+                                {{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(((client?.balance||0) - (client?.initial_debt || 0))) }}
                                 so'm
                             </div>
                         </PopoverTrigger>
-                        <PopoverContent class="w-auto p-0" align="start">
-                            <DataTable hideSearch hideBottom clientSide :items="annual_expenses" :loading="loading" :count="annual_expenses.length" :headers="ANNUAL_EXPENSES_HEADERS">
-                                <template #extraTop>
-                                    <div class="col-span-1 sm:col-span-4 flex justify-between items-center">
-                                        <p class="p-2">Yillik qarzlar ro'yxati</p>
-                                    </div>
-                                </template>
-                                <template #item.purchase="{item}">
-                                    <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.purchase||0) }} so'm</span>
-                                </template>
-                                <template #item.total="{item}">
-                                    <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.total||0) }} so'm</span>
-                                </template>
-                                <template #item.income="{item}">
-                                    <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.income||0) }} so'm</span>
-                                </template>
-                            </DataTable>
+                        <PopoverContent class="w-auto p-0" align="end" v-if="!!client?.initial_debt">
+                            <div class="flex items-center gap-2 px-3">
+                                <p>{{ client?.initial_debt_year }} yilda qolgan qarzi:</p>
+                                <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(client?.initial_debt||0) }} so'm</span>
+                            </div>
                         </PopoverContent>
                     </Popover>
-
                 </div>
             </div>
         </CardContent>
     </Card>
 
     <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
-
         <div class="col-span-1 md:col-span-2 h-min">
-            <DataTable hideSearch hideBottom clientSide :items="purchases" :loading="loading" :count="purchases.length" :headers="PURCHASE_HEADERS">
+            <DataTable :totalItem="totalPurchase" hideSearch hideBottom clientSide :items="purchases" :loading="loading" :count="purchases.length" :headers="PURCHASE_HEADERS">
                 <template #extraTop>
                     <div class="col-span-1 sm:col-span-4 flex justify-between items-center">
                         <p class="p-2">Sotuvlar ro'yxati</p>
@@ -85,7 +71,10 @@
                     </div>
                 </template>
                 <template #item.date="{item}">
-                    <span>{{ new Intl.DateTimeFormat('ru-RU').format(new Date(item.date)) }}</span>
+                    <Button v-if="item.date" @click="editDateItem(item, 'PURCHASE')" size="sm" variant="secondary">
+                        <span>{{ new Intl.DateTimeFormat('ru-RU').format(new Date(item.date)) }}</span>
+                    </Button>
+                    <span v-else>Jami: </span>
                 </template>
                 <template #item.currency="{ item }">
                     <span>{{ item.currency ? item.currency + " so'm" : "-" }}</span>
@@ -112,7 +101,7 @@
         </div>
 
         <div class="col-span-1 h-min">
-            <DataTable hideSearch hideBottom clientSide :items="incomeFilters" :loading="loading" :count="incomes.length" :headers="INCOME_HEADERS">
+            <DataTable :totalItem="totalIncome" hideSearch hideBottom clientSide :items="incomeFilters" :loading="loading" :count="incomes.length" :headers="INCOME_HEADERS">
                 <template #extraTop>
                     <div class="col-span-1 sm:col-span-2 md:col-span-4 flex justify-between items-center">
                         <p class="p-2 text-nowrap">To'lovlar ro'yxati</p>
@@ -139,7 +128,10 @@
                     </div>
                 </template>
                 <template #item.date="{ item }">
-                    <span>{{ new Intl.DateTimeFormat('ru-RU').format(new Date(item.date)) }}</span>
+                    <Button v-if="item.date" @click="editDateItem(item, 'INCOME')" size="sm" variant="secondary">
+                        <span>{{ new Intl.DateTimeFormat('ru-RU').format(new Date(item.date)) }}</span>
+                    </Button>
+                    <span v-else>Jami: </span>
                 </template>
                 <template #item.amount="{ item }">
                     <span v-if="item.currency">
@@ -156,7 +148,8 @@
                     <span>{{ item.currency ? item.currency + " so'm" : "-" }}</span>
                 </template>
                 <template #item.method="{ item }">
-                    <span class="text-nowrap px-2 py-1 rounded-md" :class="PAYMENT_METHOD_COLORS[item.method]">{{ PAYMENT_METHODS[item.method] }}</span>
+                    <span v-if="item.method" class="text-nowrap px-2 py-1 rounded-md" :class="PAYMENT_METHOD_COLORS[item.method]">{{ PAYMENT_METHODS[item.method] }}</span>
+                    <span v-else>-</span>
                 </template>
             </DataTable>
         </div>
@@ -173,34 +166,57 @@
         :dialog="purchaseDialog"
         @submited="createPurchase"
         @closed="purchaseDialog=false" />
+
+    <Dialog :open="dateItem.id !== null" @update:open="closePurchaseDateDialog">
+        <DialogContent class="max-w-[500px]">
+            <DialogHeader>
+                <DialogTitle>Sanani o'zgartirish</DialogTitle>
+            </DialogHeader>
+
+            <DatePicker v-model="dateItem.date" @update:model-value="updateDateItem" />
+        </DialogContent>
+    </Dialog>
 </template>
 
 <script setup lang="ts">
 import { useStore } from '@/store'
 import { useRoute } from 'vue-router'
-import { getExpenses } from '@/api/expenses'
+import { createToast } from '@/lib/toast'
 import { ref, computed, onMounted } from 'vue'
 import { Button } from '@/components/ui/button'
+import { ALERT_MESSAGES } from '@/utils/constants'
 import DataTable from '@/components/data-table.vue'
 import IncomeForm from '@/components/income-form.vue'
+import DatePicker from '@/components/data-picker.vue'
+import { Purchase, Income, Client } from '@/utils/types'
 import { generateClientPDF } from '@/utils/generate-pdf'
 import { Card, CardContent } from '@/components/ui/card'
 import PurchaseForm from '@/components/purchase-form.vue'
 import DateRangePicker from '@/components/date-range-picker.vue'
-import { Purchase, Income, Client, AnnualExpenses } from '@/utils/types'
+import { getExpenses, updateIncome, updatePurchase } from '@/api/expenses'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { PAYMENT_METHODS, PURCHASE_HEADERS, INCOME_HEADERS, PAYMENT_METHOD_COLORS } from '@/utils/constants'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { PAYMENT_METHODS, PURCHASE_HEADERS, INCOME_HEADERS, PAYMENT_METHOD_COLORS, ANNUAL_EXPENSES_HEADERS } from '@/utils/constants'
 import { Download, CalendarClock, Calendar, CalendarFold, CalendarDays, CalendarRange, ArrowLeft, ListFilter, Check } from 'lucide-vue-next'
 
 const store = useStore()
 const router = useRoute()
 
+const dateItem = ref<{
+    date: Date
+    id: null | number
+    type: "INCOME" | "PURCHASE"
+}>({
+    id: null,
+    date: new Date(),
+    type: "PURCHASE",
+})
+
 const loading = ref(false)
 const methodFilter = ref("")
 const client = ref<Client|null>(null)
 const clientId = Number(router.params.id)
-const annual_expenses = ref<AnnualExpenses[]>([])
 const dateFilter = ref({
     start: new Date(new Date().getFullYear(), new Date().getMonth(), 1),
     end: new Date()
@@ -208,6 +224,7 @@ const dateFilter = ref({
 
 const incomeDialog = ref(false)
 const incomes = ref<Income[]>([])
+const totalIncome = ref<Income|null>(null)
 const incomeFilters = computed<Income[]>(() => {
     if(methodFilter.value === "") return incomes.value
     else return incomes.value.filter(i => i.method === methodFilter.value)
@@ -215,10 +232,14 @@ const incomeFilters = computed<Income[]>(() => {
 
 const purchaseDialog = ref(false)
 const purchases = ref<Purchase[]>([])
+const totalPurchase = ref<Purchase|null>(null)
 
 const handleDownloadPdf = () => {
     if(confirm('Fayl mijozning telegramiga junatilsinmi?')) {
-        generateClientPDF(client.value!, purchases.value, incomes.value, annual_expenses.value, dateFilter.value.start, dateFilter.value.end, true)
+        generateClientPDF(client.value!,
+            totalPurchase.value ? [...purchases.value, totalPurchase.value] : purchases.value,
+            totalIncome.value ? [...incomes.value, totalIncome.value] : incomes.value,
+        dateFilter.value.start, dateFilter.value.end, true)
         
         let phone = String(client.value?.phone)
         phone = phone.replace(/\D/g, "");
@@ -227,7 +248,10 @@ const handleDownloadPdf = () => {
         // console.log(telegramUrl);
         window.open(telegramUrl, "_blank");
     } else {
-        generateClientPDF(client.value!, purchases.value, incomes.value, annual_expenses.value, dateFilter.value.start, dateFilter.value.end)
+        generateClientPDF(client.value!,
+            totalPurchase.value ? [...purchases.value, totalPurchase.value] : purchases.value,
+            totalIncome.value ? [...incomes.value, totalIncome.value] : incomes.value,
+        dateFilter.value.start, dateFilter.value.end)
     }
 }
 
@@ -235,49 +259,26 @@ const createIncome = (data: Income) => {
     incomes.value.push(data)
     const v = data.currency ? data.currency * data.amount : data.amount
     client.value!.balance += v
-
-    const year = new Date(data.date).getFullYear()
-    const index = annual_expenses.value.findIndex(a => a.year === year)
-
-    console.log(year, index, data.date);
     
-    if(index > -1) {
-        console.log(annual_expenses.value[index]);
-        annual_expenses.value[index].income += v
-        annual_expenses.value[index].total += v
-    } else {
-        annual_expenses.value.push({
-            year,
-            total: v,
-            income: v,
-            purchase: 0,
-            id: Date.now(),
-            client_id: clientId,
-        } as any)
+    if(totalIncome.value) {
+        totalIncome.value.amount += v
     }
 }
 
 const createPurchase = (data: Purchase) => {
     purchases.value.push(data)
     client.value!.balance -= data.total_price
-
-    const year = new Date(data.date).getFullYear()
-    const index = annual_expenses.value.findIndex(a => a.year === year)
-
-    console.log(year, index, data.date);
-    if(index > -1) {
-        console.log(annual_expenses.value[index]);
-        annual_expenses.value[index].purchase -= data.total_price
-        annual_expenses.value[index].total -= data.total_price
-    } else {
-        annual_expenses.value.push({
-            year,
-            total: -data.total_price,
-            income: 0,
-            purchase: data.total_price,
-            id: Date.now(),
-            client_id: clientId,
-        } as any)
+    // - if 0 elements not implemented
+    console.log(totalPurchase.value)
+    if(totalPurchase.value) {
+        if(typeof totalPurchase.value?.car_cost == 'number') totalPurchase.value.car_cost += (data.car_cost || 0)
+        if(typeof totalPurchase.value?.other_cost == 'number') totalPurchase.value.other_cost += (data.other_cost || 0)
+        if(typeof totalPurchase.value?.sack_num == 'number') totalPurchase.value.sack_num += (data.sack_num || 0)
+        if(typeof totalPurchase.value?.sack_price == 'number') totalPurchase.value.sack_price += (data.sack_price || 0)
+        if(typeof totalPurchase.value?.scatter_num == 'number') totalPurchase.value.scatter_num += (data.scatter_num || 0)
+        if(typeof totalPurchase.value?.scatter_price == 'number') totalPurchase.value.scatter_price += (data.scatter_price || 0)
+        if(typeof totalPurchase.value?.sum_price == 'number') totalPurchase.value.sum_price += (data.sum_price || 0)
+        if(typeof totalPurchase.value?.total_price == 'number') totalPurchase.value.total_price += (data.total_price || 0)
     }
 }
 
@@ -288,7 +289,27 @@ const getItems = async (dates: any) => {
         client.value = data.client
         incomes.value = data.incomes
         purchases.value = data.purchases
-        annual_expenses.value = data.annual_expenses
+        console.log(data);
+        
+
+        if(data.totalIncomes) totalIncome.value = {
+            date: null,
+            method: null,
+            currency: null,
+            amount: data.incomes.length === 0 ? 0 : data.totalIncomes.amount,
+        } as any
+
+        if(data.totalPurchase) {
+            if(data.purchases.length === 0) {
+                const obj = {}
+                Object.keys(data.totalPurchase).map(k => {
+                    Object.assign(obj, { [k]: 0 })
+                })
+                totalPurchase.value = obj as any
+            } else {
+                totalPurchase.value = data.totalPurchase
+            }
+        }
     } catch (error) {
         console.log(error);
     } finally {
@@ -321,6 +342,41 @@ const getReportPeriod = async (type: "15_days" | "1_month" | "6_months" | "1_yea
     dateFilter.value = { start, end };
     await getItems({ start, end })
 }
+
+
+const updateDateItem = async (date: Date | undefined) => {
+    try {
+        if(dateItem.value.type === 'INCOME') {
+            await updateIncome(dateItem.value.id!, { date })
+            const index = incomes.value.findIndex(i => i.id === dateItem.value.id!)
+            Object.assign(incomes.value[index], { date })
+        } else if(dateItem.value.type === 'PURCHASE') {
+            await updatePurchase(dateItem.value.id!, { date })
+            const index = purchases.value.findIndex(p => p.id === dateItem.value.id!)
+            Object.assign(purchases.value[index], { date })
+        }
+        closePurchaseDateDialog()
+        createToast(ALERT_MESSAGES.DATA_UPDATED, 'SUCCESS')
+    } catch (error) {
+        console.log(error)
+        createToast(ALERT_MESSAGES.OPERATION_FAILED, 'WARNING')
+    }
+}
+
+const editDateItem = (item: Purchase | Income, type: "INCOME" | "PURCHASE") => {
+    dateItem.value.type = type
+    dateItem.value.id = item.id
+    dateItem.value.date = new Date(item.date)
+}
+
+const closePurchaseDateDialog = () => {
+    dateItem.value = {
+        id: null,
+        type: "PURCHASE",
+        date: new Date(),
+    }
+}
+
 
 onMounted(() => {
     getItems(dateFilter.value)

@@ -63,12 +63,18 @@ export const createUser = async (data: Partial<User>) => {
     const db = await DB
 
     const { password, role, username } = data
+
+    
+    const [hasUser] = await db.select<User[]>("SELECT * FROM users WHERE username = ?", [data.username])
+
+    if(hasUser) return null
+
     await db.execute(
         "INSERT INTO users (username, password, role, created_at, updated_at) VALUES ($1, $2, $3, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
         [username, password, role || 'VIEWER']
     )
 
-    const [user]: any = await db.select(`
+    const [user] = await db.select<User[]>(`
         SELECT * FROM users ORDER BY id DESC LIMIT 1
     `);
 
@@ -81,9 +87,13 @@ export const updateUser = async (id: number, data: Partial<User>) => {
     const fields = Object.keys(data).map((key) => `${key} = ?`).join(", ")
     const values = Object.values(data)
     values.push(id)
+
+    const [hasUser] = await db.select<User[]>("SELECT * FROM users WHERE username = ? AND NOT id = ?", [data.username, id])
+
+    if(hasUser) return null
     
     await db.execute(`UPDATE users SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values)
-    const [user]: any = await db.select(`
+    const [user] = await db.select<User[]>(`
         SELECT * FROM users WHERE id = ?
     `, [id]);
 
@@ -100,9 +110,11 @@ export const deleteUser = async (id: number) => {
 export const loginUser = async (data: Partial<User>) => {
     const db = await DB
     const { password, username } = data
-    const [user]: any = await db.select("SELECT * from users WHERE username = $1", [username])
+    const [user] = await db.select<User[]>("SELECT * from users WHERE username = $1", [username])
 
     if(!user || user.password !== password) return null
+
+    await db.select("UPDATE users SET last_login = CURRENT_TIMESTAMP WHERE id = ?", [user.id])
 
     return user
 }

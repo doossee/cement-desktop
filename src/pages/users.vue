@@ -6,13 +6,30 @@
         :headers="USER_HEADERS"
         
         @fetching="getItems">
-        <template #extraTop>
-            <span class="hidden md:block"></span>
+        <template #extraTop="{handleFetch}">
+            <Select @update:model-value="handleFilterbyRole($event, handleFetch)">
+                <SelectTrigger>
+                    <SelectValue placeholder="Roli bo'yicha saralash" />
+                </SelectTrigger>
+                <SelectContent>
+                    <SelectGroup>
+                        <SelectItem v-for="v,i in ALL_ROLES" :key="i" :value="v.value">
+                            {{ v.title }}
+                        </SelectItem>
+                    </SelectGroup>
+                </SelectContent>
+            </Select>
             <span class="hidden md:block"></span>
             <Button @click="() => dialog=true">Yangi foydalanuvchi kiritish</Button>
         </template>
         <template #item.role="{item}">
             <span>{{ ROLES[item.role] }}</span>
+        </template>
+        <template #item.last_login="{item}">
+            <span>{{ item.last_login ? new Date(item.last_login).toLocaleString() : '-' }}</span>
+        </template>
+        <template #item.created_at="{item}">
+            <span>{{ item.created_at ? new Date(item.created_at).toLocaleString() : '-' }}</span>
         </template>
         <template #item.actions="{ item, index }">
             <div class="flex items-center gap-2 justify-end">
@@ -108,13 +125,21 @@ const itemId = ref<null|number>(null)
 const itemIndex = ref<null|number>(null)
     
 const formSchema = toTypedSchema(z.object({
-  username: z.string({ required_error: "Login kiritilish shart", invalid_type_error: "Login kiritilishi shart" }).min(1),
-  password: z.string({ required_error: "Parol 3 tadan ko'p belgidan ko'p bo'lishi kerak", invalid_type_error: "Parol kiritilishi shart" }).min(3),
-  role: z.string({ required_error: "Foydalanuvchi roli belgilanishi shart", invalid_type_error: "Foydalanuvchi roli belgilanishi shart" }).min(1).default("VIEWER"),
+  username: z.string({ required_error: "Login kiritilish shart", invalid_type_error: "Login kiritilishi shart" })
+    .min(1, { message: "Login kiritilish shart" }),
+  password: z.string({ required_error: "Parol 3 tadan ko'p belgidan ko'p bo'lishi kerak", invalid_type_error: "Parol kiritilishi shart" })
+    .min(3, { message: "Parol 3 tadan ko'p belgidan ko'p bo'lishi kerak" }),
+  role: z.string({ required_error: "Foydalanuvchi roli belgilanishi shart", invalid_type_error: "Foydalanuvchi roli belgilanishi shart" })
+    .min(1, { message: "Foydalanuvchi roli belgilanishi shart" }).nonempty(),
 }))
 
 const { handleSubmit, resetForm, setFieldValue, isSubmitting } = useForm({
   validationSchema: formSchema,
+  initialValues: {
+    username: "",
+    password: "",
+    role: "VIEWER",
+  }
 })
 
 const roles = computed(() => {
@@ -123,6 +148,15 @@ const roles = computed(() => {
         value: k
     }))
 })
+
+const ALL_ROLES = computed(() => {
+    return [{ title: "BARCHASI", value: "all" }, ...roles.value]
+})
+
+const handleFilterbyRole = (role: string, cb: any) => {
+    if(role === "all") cb()
+    else cb({ filters: { role } })
+}
 
 const getItems = async (params: any) => {
     try {
@@ -159,12 +193,14 @@ const remove = async (id: number, index: number) => {
 
 const create = async (body: Partial<User>) => {
     const data = await createUser(body)
+    if(!data) return createToast(ALERT_MESSAGES.ALREADY_EXISTS, "WARNING")
     createToast(ALERT_MESSAGES.DATA_CREATED, "SUCCESS")
     items.value.push(data)
 }
 
 const update = async (id: number, body: Partial<User>) => {
     const data = await updateUser(id, body)
+    if(!data) return createToast(ALERT_MESSAGES.ALREADY_EXISTS, "WARNING")
     createToast(ALERT_MESSAGES.DATA_UPDATED, "SUCCESS")
     Object.assign(items.value[itemIndex.value!], data)
 }

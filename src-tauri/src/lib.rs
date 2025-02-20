@@ -49,21 +49,12 @@ pub fn run() {
                 \"name\" TEXT NOT NULL,
                 \"phone\" TEXT,
                 \"status\" TEXT NOT NULL DEFAULT 'CLEAR',
+                \"type\" TEXT NOT NULL DEFAULT 'DAILY',
                 \"balance\" INTEGER NOT NULL DEFAULT 0,
+                \"initial_debt\" INTEGER,
+                \"initial_debt_year\" INTEGER,
                 \"created_at\" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 \"updated_at\" DATETIME NOT NULL
-            );
-
-            CREATE TABLE IF NOT EXISTS \"annual_expenses\" (
-                \"id\" INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT,
-                \"client_id\" INTEGER NOT NULL,
-                \"year\" INTEGER NOT NULL UNIQUE,
-                \"total\" INTEGER NOT NULL DEFAULT 0,
-                \"income\" INTEGER NOT NULL DEFAULT 0,
-                \"purchase\" INTEGER NOT NULL DEFAULT 0,
-                \"created_at\" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
-                \"updated_at\" DATETIME NOT NULL,
-                CONSTRAINT \"annual_expenses_client_id_fkey\" FOREIGN KEY (\"client_id\") REFERENCES \"clients\" (\"id\") ON DELETE RESTRICT ON UPDATE CASCADE
             );
 
             CREATE TABLE IF NOT EXISTS \"purchases\" (

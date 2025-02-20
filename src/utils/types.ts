@@ -8,6 +8,7 @@ export interface DataTableHeaders<T> {
 export interface DataTableProps<T> {
   items: T[]
   count: number
+  totalItem?: T | null
   trClass?: string
   loading?: boolean
   hideTop?: boolean
@@ -20,6 +21,8 @@ export interface DataTableProps<T> {
 
 export type Role = "ADMIN" | "VIEWER";
 
+export type ClientType = "DAILY" | "BIG";
+
 export type ClientStatus = "DEBT" | "CLEAR" | "OWED";
 
 export type PaymentMethod = "CASH" | "CARD" | "TRANSFER" | "INSURANCE" | "NOTARY";
@@ -28,22 +31,25 @@ export interface User {
   id: number;
   username: string;
   password: string;
-  role: Role | string;
   last_login: Date;
   created_at: Date;
   updated_at: Date;
+  role: Role | string;
 }
 
 export interface Client {
   id: number;
   name: string;
-  phone?: string | null;
-  status: ClientStatus;
   balance: number;
   created_at: Date;
   updated_at: Date;
-  purchases: Purchase[];
   incomes: Income[];
+  initial_debt: number;
+  status: ClientStatus;
+  phone?: string | null;
+  purchases: Purchase[];
+  initial_debt_year: number;
+  type: ClientType | string;
 }
 
 export interface Purchase {
@@ -74,16 +80,4 @@ export interface Income {
   client_id: number
   currency?: number
   method: PaymentMethod
-}
-
-export interface AnnualExpenses {
-  id: number
-  year: number
-  total: number
-  client: Client
-  income: number
-  purchase: number
-  created_at: Date
-  updated_at: Date
-  client_id: number
 }
