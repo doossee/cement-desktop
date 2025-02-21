@@ -90,6 +90,7 @@ export const INCOME_HEADERS = [
     { title: 'Summasi', key: 'amount', sorting: true },
     { title: 'Valyuta kursi', key: 'currency', sorting: false },
     { title: "To'lov turi", key: 'method', sorting: false },
+    { title: 'Boshqarish', key: 'actions', sorting: false, class: "text-right" },
 ]
 
 export const PURCHASE_HEADERS = [
@@ -103,6 +104,7 @@ export const PURCHASE_HEADERS = [
     { title: 'Mashina xarajati', key: 'car_cost', sorting: true },
     { title: 'Olgan naqd puli', key: 'other_cost', sorting: true },
     { title: 'Jami summasi', key: 'total_price', sorting: true },
+    { title: 'Boshqarish', key: 'actions', sorting: false, class: "text-right" },
 ]
 
 export const LINKS = [

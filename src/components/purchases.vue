@@ -1,11 +1,55 @@
 <template>
-    <Dialog :open="dialog" @update:open="closeDialog">
+    <DataTable :totalItem="totalPurchase" hideSearch hideBottom clientSide :items="purchases" :loading="loading" :count="purchases.length" :headers="PURCHASE_HEADERS">
+        <template #extraTop>
+            <div class="col-span-1 sm:col-span-4 flex justify-between items-center">
+                <p class="p-2">Sotuvlar ro'yxati</p>
+                <Button v-if="store.userData?.role === 'ADMIN'" @click="purchaseDialog=true" class="!bg-[#D93333] hover:!bg-[#aa3333]">Sotuv kiritish</Button>
+            </div>
+        </template>
+        <template #item.date="{item}">
+            <span v-if="item.date">{{ new Intl.DateTimeFormat('ru-RU').format(new Date(item.date)) }}</span>
+            <span v-else>Jami: </span>
+        </template>
+        <template #item.currency="{ item }">
+            <span>{{ item.currency ? item.currency + " so'm" : "-" }}</span>
+        </template>
+        <template #item.sack_price="{item}">
+            <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.sack_price||0) }} {{ item.currency ? "$" : "so'm" }}</span>
+        </template>
+        <template #item.scatter_price="{item}">
+            <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.scatter_price||0) }} {{ item.currency ? "$" : "so'm" }}</span>
+        </template>
+        <template #item.sum_price="{item}">
+            <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.sum_price||0) }} so'm</span>
+        </template>
+        <template #item.car_cost="{item}">
+            <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.car_cost||0) }} {{ item.currency ? "$" : "so'm" }}</span>
+        </template>
+        <template #item.other_cost="{item}">
+            <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.other_cost||0) }} {{ item.currency ? "$" : "so'm" }}</span>
+        </template>
+        <template #item.total_price="{item}">
+            <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.total_price||0) }} so'm</span>
+        </template>
+        <template #item.actions="{ item, index }">
+            <div v-if="store.userData?.role === 'ADMIN' && item.id" class="flex items-center gap-2 justify-end" @click.stop>
+                <Button @click="editItem(item)" size="icon" class="!bg-[#008040] hover:!bg-[#007040]">
+                    <Pen />
+                </Button>
+                <Button v-show="false" @click="handleDeletePurchase(item.id, index)" size="icon" class="!bg-[#D93333] hover:!bg-[#aa3333]">
+                    <Trash />
+                </Button>
+            </div>
+            <span v-else>-</span>
+        </template>
+    </DataTable>
+    <Dialog :open="purchaseDialog" @update:open="closeDialog">
         <DialogContent class="max-w-[500px]">
             <DialogHeader>
                 <DialogTitle>Sotuv kiritish</DialogTitle>
             </DialogHeader>
 
-            <form @submit="handleCreatePurchase" class="grid grid-cols-2 gap-3">
+            <form @submit="handleSave" class="grid grid-cols-2 gap-3">
                 <FormField v-slot="{ componentField }" name="date">
                     <FormItem class="col-span-2">
                         <FormLabel>Sana</FormLabel>
@@ -92,23 +136,32 @@
 
 <script setup lang="ts">
 import * as z from 'zod'
+import { useStore } from '@/store'
 import { computed, ref } from 'vue'
 import { useForm } from 'vee-validate'
+import { Purchase } from '@/utils/types'
 import { createToast } from '@/lib/toast'
+import { Pen, Trash } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
-import { createPurchase } from '@/api/expenses'
 import { toTypedSchema } from '@vee-validate/zod'
 import { ALERT_MESSAGES } from '@/utils/constants'
+import DataTable from '@/components/data-table.vue'
+import { PURCHASE_HEADERS } from '@/utils/constants'
 import DatePicker from '@/components/data-picker.vue'
+import { createPurchase, deletePurchase, updatePurchase } from '@/api'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormField, FormItem, FormMessage, FormLabel, FormControl } from '@/components/ui/form'
 
-const emits = defineEmits(['submited', 'closed'])
-const { clientId, dialog } = defineProps<{ clientId: number, dialog: boolean }>()
+const emits = defineEmits(['deleted', 'created', 'updated', 'closed'])
+const { clientId, totalPurchase, purchases, loading } = defineProps<{ clientId: number, totalPurchase: Purchase|null, purchases: Purchase[], loading: boolean }>()
+
+const store = useStore()
 
 const currency = ref(1)
 const isCurrency = ref(false)
+const purchaseDialog = ref(false)
+const itemId = ref<number|null>(null)
 
 const purchaseformSchema = toTypedSchema(z.object({
     client_id: z.number().default(clientId),
@@ -157,17 +210,30 @@ const purchaseTotalPrice = computed(() => {
     return +purchaseSumPrice.value + (isCurrency.value ? value * currency.value : value)
 })
 
-const handleCreatePurchase = handleSubmit(async (values) => {
+const editItem = (item: Purchase) => {
+    itemId.value = item.id
+    purchaseDialog.value = true
+
+    setFieldValue('date', new Date(item.date))
+    setFieldValue('client_id', item.client_id)
+    setFieldValue('sack_num', item.sack_num||0)
+    setFieldValue('car_cost', item.car_cost||0)
+    setFieldValue('other_cost', item.other_cost||0)
+    setFieldValue('sack_price', item.sack_price||0)
+    setFieldValue('scatter_num', item.scatter_num||0)
+    setFieldValue('scatter_price', item.scatter_price||0)
+}
+
+const handleSave = handleSubmit(async (values) => {
     try {
         const body = {
             ...values,
             sum_price: purchaseSumPrice.value,
             total_price: purchaseTotalPrice.value,
         }
-        // if(isCurrency.value) Object.assign(body, { currency: currency.value })
-        const data = await createPurchase(body)
-        createToast(ALERT_MESSAGES.DATA_CREATED, 'SUCCESS')
-        emits('submited', data)
+        if(itemId.value) await update(itemId.value, body)
+        else await create(body)
+
         closeDialog()
     } catch (error) {
         createToast(ALERT_MESSAGES.OPERATION_FAILED, 'WARNING')
@@ -175,13 +241,41 @@ const handleCreatePurchase = handleSubmit(async (values) => {
     }
 })
 
+const create = async (body: Partial<typeof values>) => {
+    const data = await createPurchase(body)
+
+    createToast(ALERT_MESSAGES.DATA_UPDATED, "SUCCESS")
+    emits('created', data)
+}
+
+const update = async (id: number, body: Partial<typeof values>) => {
+    const index = purchases.findIndex(p => p.id === id)
+    const data = await updatePurchase(id, body, purchases[index]?.total_price||0)
+    createToast(ALERT_MESSAGES.DATA_CREATED, "SUCCESS")
+    emits('updated', body, Object.assign({}, purchases[index]), data, index)
+}
+
+const handleDeletePurchase = async (id: number, index: number) => {
+    try {
+        if(!confirm("Ushbu sotuv o'chirmoqchimisiz?")) return
+    
+        const balance = await deletePurchase(id, purchases[index].total_price, clientId)
+        createToast(ALERT_MESSAGES.DATA_DELETED, "SUCCESS")
+        emits('deleted', purchases[index], balance, index)
+    } catch (error) {
+        createToast(ALERT_MESSAGES.OPERATION_FAILED, "WARNING")
+    }
+}
+
 const closeDialog = () => {
-    emits('closed')
+    itemId.value = null
+    purchaseDialog.value = false
     setFieldValue('car_cost', 0)
     setFieldValue('sack_num', 0)
     setFieldValue('other_cost', 0)
     setFieldValue('sack_price', 0)
     setFieldValue('scatter_num', 0)
     setFieldValue('scatter_price', 0)
+    setFieldValue('date', new Date())
 }
 </script>

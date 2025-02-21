@@ -52,7 +52,6 @@ pub fn run() {
                 \"type\" TEXT NOT NULL DEFAULT 'DAILY',
                 \"balance\" INTEGER NOT NULL DEFAULT 0,
                 \"initial_debt\" INTEGER,
-                \"initial_debt_year\" INTEGER,
                 \"created_at\" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 \"updated_at\" DATETIME NOT NULL
             );

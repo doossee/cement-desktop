@@ -48,7 +48,7 @@
             <span class="px-2 py-1 rounded-md" :class="CLIENT_TYPE_COLORS[item.type]">{{ CLIENT_TYPES[item.type] }}</span>
         </template>
         <template #item.debt="{item}">
-            {{ item.initial_debt ? `${item.initial_debt_year} yilda qolgan qarzi: ${item.initial_debt.toLocaleString('ru-RU')} s'om` : '-' }}
+            {{ item.initial_debt ? `Avvalgi qolgan qarzi: ${item.initial_debt.toLocaleString('ru-RU')} s'om` : '-' }}
         </template>
         <template #item.balance="{item}">
             <span :class="(item.balance - (item.initial_debt || 0))>0?'text-[#008040]':((item.balance - (item.initial_debt || 0))<0?'text-[#D93333]':'')">
@@ -117,26 +117,15 @@
                     </FormItem>
                 </FormField>
 
-                <div class="grid grid-cols-2 gap-2">
-                    <FormField v-slot="{ componentField }" name="initial_debt">
-                        <FormItem>
-                            <FormLabel>Yillik qarzi</FormLabel>
-                            <FormControl>
-                                <Input type="number" placeholder="Yillik qarzi" v-bind="componentField" />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    </FormField>
-                    <FormField v-slot="{ componentField }" name="initial_debt_year">
-                        <FormItem>
-                            <FormLabel>Yil</FormLabel>
-                            <FormControl>
-                                <Input type="number" placeholder="Yil" v-bind="componentField" />
-                            </FormControl>
-                            <FormMessage />
-                        </FormItem>
-                    </FormField>
-                </div>
+                <FormField v-slot="{ componentField }" name="initial_debt">
+                    <FormItem>
+                        <FormLabel>Avvalgi qolgan qarzi</FormLabel>
+                        <FormControl>
+                            <Input type="number" placeholder="Avvalgi qarzi" v-bind="componentField" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
 
                 <Button type="submit" :disabled="isSubmitting">Saqlash</Button>
             </form>
@@ -221,14 +210,12 @@ const saveLoading = ref(false)
 const items = ref<Client[]>([])
 const itemId = ref<null|number>(null)
 const itemIndex = ref<null|number>(null)
-const currentYear = new Date().getFullYear()
 const userInitialValues = {
     name: "",
     phone: "",
     type: "DAILY",
 
     initial_debt: 0,
-    initial_debt_year: currentYear,
 }
 
 const statuses = computed(() => {
@@ -248,7 +235,6 @@ const formSchema = toTypedSchema(z.object({
     .min(2, { message: "Mijoz turi beligilanishi shart" }).max(50).nonempty(),
 
   initial_debt: z.number().default(0).optional(),
-  initial_debt_year: z.number().default(currentYear).optional(),
 }))
 
 const { handleSubmit, resetForm, setFieldValue, isSubmitting, values } = useForm({
@@ -285,7 +271,6 @@ const editItem = (item: Client, index: number) => {
     setFieldValue('type', item.type!)
     setFieldValue('phone', item.phone!)
     setFieldValue('initial_debt', item.initial_debt!)
-    setFieldValue('initial_debt_year', item.initial_debt_year!)
 }
 
 const remove = async (id: number, index: number) => {

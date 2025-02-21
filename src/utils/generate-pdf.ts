@@ -35,7 +35,7 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
       //   text: CLIENT_TYPES[client.type], style: "subheader", color: "black"
       // },
       {
-        text: client.initial_debt ? `${client.initial_debt_year} yilda qolgan qarzi: ${client.initial_debt.toLocaleString('ru-RU')} s'om` : '', style: "subheader", color: "black"
+        text: client.initial_debt ? `Avvalgi qolgan qarzi: ${client.initial_debt.toLocaleString('ru-RU')} s'om` : '', style: "subheader", color: "black"
       },
 
       { text: "Chiqimlar", style: "sectionHeader" },

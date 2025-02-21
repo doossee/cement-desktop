@@ -95,28 +95,72 @@ export const createIncome = async (data: Partial<Income>) => {
     return newPurchase
 };
 
-export const updatePurchase = async (id: number, data: Partial<Purchase>) => {
-    const db = await DB
+
+export const deletePurchase = async (id: number, last_balance: number, client_id: number) => {
+    const db = await DB;
+    
+    await db.execute("UPDATE clients SET balance = balance + ? WHERE id = ?", [last_balance, client_id]);
+    
+    await db.execute("DELETE FROM purchases WHERE id = ?", [id]);
+    
+    const [{ balance }] = await db.select<Client[]>("SELECT balance FROM clients WHERE id = ?", [client_id]);
+    const status = balance < 0 ? "DEBT" : balance === 0 ? "CLEAR" : "OWED";
+    await db.execute("UPDATE clients SET status = ? WHERE id = ?", [status, client_id]);
+
+    return balance
+};
+
+export const updatePurchase = async (id: number, data: Partial<Purchase>, last_balance: number) => {
+    const db = await DB;
 
     const fields = Object.keys(data).map((key) => `${key} = ?`).join(", ")
     const values = Object.values(data)
     values.push(id)
     
     await db.execute(`UPDATE purchases SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values)
-    const [updatedClient]: any = await db.select(`SELECT * FROM purchases WHERE id = ?`, [id]);
+    
+    const balanceDiff = data.total_price! - last_balance;
+    await db.execute("UPDATE clients SET balance = balance - ? WHERE id = ?", [balanceDiff, data.client_id]);
+    
+    const [{ balance }] = await db.select<Client[]>("SELECT balance FROM clients WHERE id = ?", [data.client_id]);
+    const status = balance < 0 ? "DEBT" : balance === 0 ? "CLEAR" : "OWED";
+    await db.execute("UPDATE clients SET status = ? WHERE id = ?", [status, data.client_id]);
 
-    return updatedClient
+    return balance
 };
 
-export const updateIncome = async (id: number, data: Partial<Income>) => {
-    const db = await DB
 
+export const deleteIncome = async (id: number, last_balance: number, client_id: number) => {
+    const db = await DB;
+    
+    await db.execute("UPDATE clients SET balance = balance - ? WHERE id = ?", [last_balance, client_id]);
+    
+    await db.execute("DELETE FROM incomes WHERE id = ?", [id]);
+    
+    const [{ balance }] = await db.select<Client[]>("SELECT balance FROM clients WHERE id = ?", [client_id]);
+    const status = balance < 0 ? "DEBT" : balance === 0 ? "CLEAR" : "OWED";
+    await db.execute("UPDATE clients SET status = ? WHERE id = ?", [status, client_id]);
+
+    return balance
+};
+
+export const updateIncome = async (id: number, data: Partial<Income>, last_balance: number) => {
+    const db = await DB;
+    
+    const newIncomeAmount = data.currency && data.amount ? data.currency * data.amount : (data.amount||0);
+    const balanceDiff = newIncomeAmount - last_balance;
+    
+    await db.execute("UPDATE clients SET balance = balance + ? WHERE id = ?", [balanceDiff, data.client_id]);
+    
     const fields = Object.keys(data).map((key) => `${key} = ?`).join(", ")
     const values = Object.values(data)
     values.push(id)
     
     await db.execute(`UPDATE incomes SET ${fields}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`, values)
-    const [updatedClient]: any = await db.select(`SELECT * FROM incomes WHERE id = ?`, [id]);
 
-    return updatedClient
+    const [{ balance }] = await db.select<Client[]>("SELECT balance FROM clients WHERE id = ?", [data.client_id]);
+    const status = balance < 0 ? "DEBT" : balance === 0 ? "CLEAR" : "OWED";
+    await db.execute("UPDATE clients SET status = ? WHERE id = ?", [status, data.client_id]);
+
+    return balance
 };

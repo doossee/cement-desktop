@@ -48,7 +48,6 @@ export interface Client {
   status: ClientStatus;
   phone?: string | null;
   purchases: Purchase[];
-  initial_debt_year: number;
   type: ClientType | string;
 }
 
