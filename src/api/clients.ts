@@ -10,7 +10,7 @@ interface ClientFilterParams {
 }
 
 export const getClients = async ({ limit = 10, page = 1, search = '', sorting = {}, filters = {} }: ClientFilterParams) => {
-    const db = await DB
+    const db = await DB()
 
     let whereClauses: (string|number)[] = []
     let params: (string|number)[] = []
@@ -65,7 +65,7 @@ export const getClients = async ({ limit = 10, page = 1, search = '', sorting = 
 }
 
 export const getAllClients = async () => {
-    const db = await DB
+    const db = await DB()
 
     const items = await db.select<Client[]>(`SELECT * FROM clients`)
     
@@ -73,7 +73,7 @@ export const getAllClients = async () => {
 }
 
 export const createClient = async (data: Partial<Client>) => {
-    const db = await DB
+    const db = await DB()
 
     const { name, phone, status, balance, type, initial_debt } = data
     await db.execute(
@@ -89,7 +89,7 @@ export const createClient = async (data: Partial<Client>) => {
 }
 
 export const updateClient = async (id: number, data: Partial<Client>) => {
-    const db = await DB
+    const db = await DB()
 
     const fields = Object.keys(data).map((key) => `${key} = ?`).join(", ")
     const values = Object.values(data)
@@ -102,7 +102,7 @@ export const updateClient = async (id: number, data: Partial<Client>) => {
 }
 
 export const deleteClient = async (id: number) => {
-    const db = await DB
+    const db = await DB()
 
     await db.execute("DELETE FROM purchases WHERE client_id = ?", [id])
     await db.execute("DELETE FROM incomes WHERE client_id = ?", [id])

@@ -20,7 +20,7 @@
                 </SelectContent>
             </Select>
             <span class="hidden md:block"></span>
-            <Button @click="() => dialog=true">Yangi foydalanuvchi kiritish</Button>
+            <Button @click="() => dialog=true" :disabled="store.getDatabaseType !== 'current'">Yangi foydalanuvchi kiritish</Button>
         </template>
         <template #item.role="{item}">
             <span>{{ ROLES[item.role] }}</span>
@@ -33,11 +33,11 @@
         </template>
         <template #item.actions="{ item, index }">
             <div class="flex items-center gap-2 justify-end">
-                <Button @click="editItem(item, index)" size="sm" class="!bg-[#008040] hover:!bg-[#007040]">
+                <Button :disabled="store.getDatabaseType !== 'current'" @click="editItem(item, index)" size="sm" class="!bg-[#008040] hover:!bg-[#007040]">
                     <Pen />
                     O'zgartirish
                 </Button>
-                <Button @click="remove(item.id, index)" size="sm" class="!bg-[#D93333] hover:!bg-[#aa3333]">
+                <Button :disabled="store.getDatabaseType !== 'current'" @click="remove(item.id, index)" size="sm" class="!bg-[#D93333] hover:!bg-[#aa3333]">
                     <Trash />
                     O'chirish
                 </Button>
@@ -101,6 +101,7 @@
 
 <script setup lang="ts">
 import * as z from 'zod'
+import { useStore } from '@/store'
 import { ref, computed } from 'vue'
 import { User } from '@/utils/types'
 import { useForm } from 'vee-validate'
@@ -115,6 +116,8 @@ import { ROLES, USER_HEADERS, ALERT_MESSAGES } from '@/utils/constants'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+
+const store = useStore()
 
 const count = ref(0)
 const dialog = ref(false)

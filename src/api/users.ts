@@ -10,7 +10,7 @@ interface UserFilterParams {
 }
 
 export const getUsers = async ({ limit = 10, page = 1, search = '', sorting = {}, filters = {} }: UserFilterParams) => {
-    const db = await DB
+    const db = await DB()
 
     let whereClauses: (string|number)[] = []
     let params: (string|number)[] = []
@@ -60,7 +60,7 @@ export const getUsers = async ({ limit = 10, page = 1, search = '', sorting = {}
 }
 
 export const createUser = async (data: Partial<User>) => {
-    const db = await DB
+    const db = await DB()
 
     const { password, role, username } = data
 
@@ -82,7 +82,7 @@ export const createUser = async (data: Partial<User>) => {
 }
 
 export const updateUser = async (id: number, data: Partial<User>) => {
-    const db = await DB
+    const db = await DB()
 
     const fields = Object.keys(data).map((key) => `${key} = ?`).join(", ")
     const values = Object.values(data)
@@ -101,14 +101,14 @@ export const updateUser = async (id: number, data: Partial<User>) => {
 }
 
 export const deleteUser = async (id: number) => {
-    const db = await DB
+    const db = await DB()
 
     await db.execute("DELETE FROM users WHERE id = ?", [id])
     return true
 }
 
 export const loginUser = async (data: Partial<User>) => {
-    const db = await DB
+    const db = await DB()
     const { password, username } = data
     const [user] = await db.select<User[]>("SELECT * from users WHERE username = $1", [username])
 

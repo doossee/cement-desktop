@@ -8,7 +8,7 @@ interface ExpenseFilterParams {
 }
 
 export const getExpenses = async ({ client_id, start, end }: ExpenseFilterParams) => {
-    const db = await DB
+    const db = await DB()
     start.setHours(0, 0, 0, 0);
     end.setHours(23, 59, 59, 999);
 
@@ -51,7 +51,7 @@ export const getExpenses = async ({ client_id, start, end }: ExpenseFilterParams
 };
 
 export const createPurchase = async (data: Partial<Purchase>) => {
-    const db = await DB
+    const db = await DB()
     await db.execute("UPDATE clients SET balance = balance - ? WHERE id = ?", [data.total_price, data.client_id]);
 
     const [{ balance }]: any = await db.select("SELECT balance FROM clients WHERE id = ?", [data.client_id]);
@@ -74,7 +74,7 @@ export const createPurchase = async (data: Partial<Purchase>) => {
 };
 
 export const createIncome = async (data: Partial<Income>) => {
-    const db = await DB
+    const db = await DB()
     const incomeAmount = data.currency ? data.currency * data.amount! : data.amount!
     await db.execute("UPDATE clients SET balance = balance + ? WHERE id = ?", [incomeAmount, data.client_id]);
 
@@ -97,7 +97,7 @@ export const createIncome = async (data: Partial<Income>) => {
 
 
 export const deletePurchase = async (id: number, last_balance: number, client_id: number) => {
-    const db = await DB;
+    const db = await DB();
     
     await db.execute("UPDATE clients SET balance = balance + ? WHERE id = ?", [last_balance, client_id]);
     
@@ -111,7 +111,7 @@ export const deletePurchase = async (id: number, last_balance: number, client_id
 };
 
 export const updatePurchase = async (id: number, data: Partial<Purchase>, last_balance: number) => {
-    const db = await DB;
+    const db = await DB();
 
     const fields = Object.keys(data).map((key) => `${key} = ?`).join(", ")
     const values = Object.values(data)
@@ -131,7 +131,7 @@ export const updatePurchase = async (id: number, data: Partial<Purchase>, last_b
 
 
 export const deleteIncome = async (id: number, last_balance: number, client_id: number) => {
-    const db = await DB;
+    const db = await DB();
     
     await db.execute("UPDATE clients SET balance = balance - ? WHERE id = ?", [last_balance, client_id]);
     
@@ -145,7 +145,7 @@ export const deleteIncome = async (id: number, last_balance: number, client_id: 
 };
 
 export const updateIncome = async (id: number, data: Partial<Income>, last_balance: number) => {
-    const db = await DB;
+    const db = await DB();
     
     const newIncomeAmount = data.currency && data.amount ? data.currency * data.amount : (data.amount||0);
     const balanceDiff = newIncomeAmount - last_balance;
@@ -163,4 +163,23 @@ export const updateIncome = async (id: number, data: Partial<Income>, last_balan
     await db.execute("UPDATE clients SET status = ? WHERE id = ?", [status, data.client_id]);
 
     return balance
+};
+
+
+export const deleteExpanses = async () => {
+    const db = await DB()
+
+    await db.execute(`
+        PRAGMA foreign_keys = OFF;
+
+        DELETE FROM purchases;
+        DELETE FROM incomes;
+
+        UPDATE clients 
+        SET initial_debt = -balance + initial_debt, 
+            balance = 0;
+
+        PRAGMA foreign_keys = ON;`)
+
+    return true
 };

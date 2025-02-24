@@ -3,7 +3,7 @@
         <template #extraTop>
             <div class="col-span-1 sm:col-span-4 flex justify-between items-center">
                 <p class="p-2">Sotuvlar ro'yxati</p>
-                <Button v-if="store.userData?.role === 'ADMIN'" @click="purchaseDialog=true" class="!bg-[#D93333] hover:!bg-[#aa3333]">Sotuv kiritish</Button>
+                <Button :disabled="store.getDatabaseType !== 'current'" v-if="store.userData?.role === 'ADMIN'" @click="purchaseDialog=true" class="!bg-[#D93333] hover:!bg-[#aa3333]">Sotuv kiritish</Button>
             </div>
         </template>
         <template #item.date="{item}">
@@ -33,10 +33,10 @@
         </template>
         <template #item.actions="{ item, index }">
             <div v-if="store.userData?.role === 'ADMIN' && item.id" class="flex items-center gap-2 justify-end" @click.stop>
-                <Button @click="editItem(item)" size="icon" class="!bg-[#008040] hover:!bg-[#007040]">
+                <Button :disabled="store.getDatabaseType !== 'current'" @click="editItem(item)" size="icon" class="!bg-[#008040] hover:!bg-[#007040]">
                     <Pen />
                 </Button>
-                <Button v-show="false" @click="handleDeletePurchase(item.id, index)" size="icon" class="!bg-[#D93333] hover:!bg-[#aa3333]">
+                <Button :disabled="store.getDatabaseType !== 'current'" v-show="false" @click="handleDeletePurchase(item.id, index)" size="icon" class="!bg-[#D93333] hover:!bg-[#aa3333]">
                     <Trash />
                 </Button>
             </div>
@@ -89,7 +89,7 @@
                 </FormField>
                 <FormField v-slot="{ componentField }" name="scatter_price">
                     <FormItem>
-                        <FormLabel>Sochma narxi {{ isCurrency?"$":"so'm" }}</FormLabel>
+                        <FormLabel>Sochma narxi{{ isCurrency?"$":"so'm" }}</FormLabel>
                         <FormControl>
                             <Input type="number" placeholder="Sochma narxi" v-bind="componentField" />
                         </FormControl>
@@ -137,7 +137,7 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import { useStore } from '@/store'
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import { Purchase } from '@/utils/types'
 import { createToast } from '@/lib/toast'
@@ -165,25 +165,25 @@ const itemId = ref<number|null>(null)
 
 const purchaseformSchema = toTypedSchema(z.object({
     client_id: z.number().default(clientId),
-    car_cost: z.coerce.number({ invalid_type_error: "Mashina xarajati 0 dan katta bo'lishi shart" })
-    .min(0, { message: "Mashina xarajati 0 dan katta bo'lishi shart" }).default(0),
-    other_cost: z.coerce.number({ invalid_type_error: "Olgan naqd puli 0 dan katta bo'lishi shart" })
-    .min(0, { message: "Olgan naqd puli 0 dan katta bo'lishi shart" }).default(0),
+    car_cost: z.coerce.number({ invalid_type_error: "Mashina xarajati 0 dan katta bo'lishi shart" }),
+    // .min(0, { message: "Mashina xarajati 0 dan katta bo'lishi shart" }).default(0),
+    other_cost: z.coerce.number({ invalid_type_error: "Olgan naqd puli 0 dan katta bo'lishi shart" }),
+    // .min(0, { message: "Olgan naqd puli 0 dan katta bo'lishi shart" }).default(0),
 
-    sack_num: z.coerce.number({ invalid_type_error: "Qop soni 0 dan katta bo'lishi shart" })
-    .min(0, { message: "Qop soni 0 dan katta bo'lishi shart" }),
-    sack_price: z.coerce.number({ invalid_type_error: "Qop narxi 0 dan katta bo'lishi shart" })
-    .min(0, { message: "Qop narxi 0 dan katta bo'lishi shart" }).default(0),
+    sack_num: z.coerce.number({ invalid_type_error: "Qop soni 0 dan katta bo'lishi shart" }),
+    // .min(0, { message: "Qop soni 0 dan katta bo'lishi shart" }),
+    sack_price: z.coerce.number({ invalid_type_error: "Qop narxi 0 dan katta bo'lishi shart" }),
+    // .min(0, { message: "Qop narxi 0 dan katta bo'lishi shart" }).default(0),
 
-    scatter_num: z.coerce.number({ invalid_type_error: "Sochma 0 dan katta bo'lishi shart" })
-    .min(0, { message: "Sochma 0 dan katta bo'lishi shart" }).default(0),
-    scatter_price: z.coerce.number({ invalid_type_error: "Sochma narxi 0 dan katta bo'lishi shart" })
-    .min(0, { message: "Sochma narxi 0 dan katta bo'lishi shart" }).default(0),
+    scatter_num: z.coerce.number({ invalid_type_error: "Sochma 0 dan katta bo'lishi shart" }),
+    // .min(0, { message: "Sochma 0 dan katta bo'lishi shart" }).default(0),
+    scatter_price: z.coerce.number({ invalid_type_error: "Sochma narxi 0 dan katta bo'lishi shart" }),
+    // .min(0, { message: "Sochma narxi 0 dan katta bo'lishi shart" }).default(0),
     date: z.date({ invalid_type_error: "Sana kiritilish shart",
     required_error: "Sana kiritilish shart" }).default(new Date())
 }))
 
-const { handleSubmit, isSubmitting, values, setFieldValue } = useForm({
+const { handleSubmit, isSubmitting, values, setFieldValue, resetForm } = useForm({
     validationSchema: purchaseformSchema,
     initialValues: {
         car_cost: 0,
@@ -270,12 +270,19 @@ const handleDeletePurchase = async (id: number, index: number) => {
 const closeDialog = () => {
     itemId.value = null
     purchaseDialog.value = false
-    setFieldValue('car_cost', 0)
-    setFieldValue('sack_num', 0)
-    setFieldValue('other_cost', 0)
-    setFieldValue('sack_price', 0)
-    setFieldValue('scatter_num', 0)
-    setFieldValue('scatter_price', 0)
-    setFieldValue('date', new Date())
+    // setFieldValue('car_cost', 0)
+    // setFieldValue('sack_num', 0)
+    // setFieldValue('other_cost', 0)
+    // setFieldValue('sack_price', 0)
+    // setFieldValue('scatter_num', 0)
+    // setFieldValue('scatter_price', 0)
+    // setFieldValue('date', new Date())
+    resetForm()
 }
+
+watch(purchaseDialog, (isOpen) => {
+  if (isOpen && !itemId.value) {
+    resetForm();
+  }
+});
 </script>

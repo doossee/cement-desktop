@@ -3,7 +3,7 @@
         <div class="flex flex-col gap-2">
             <template v-for="link,i in LINKS" :key="i">
                 <RouterLink :to="link.url" v-if="link.access.includes(store.user?.role!)">
-                    <Button :variant="$route.path === link.url ? 'default' : 'outline'" size="icon">
+                    <Button :variant="(store.getDatabaseType !== 'current' && link.url==='/settings')?'destructive':($route.path === link.url ? 'default' : 'outline')" size="icon">
                         <component :is="link.icon" />
                     </Button>
                 </RouterLink>
@@ -11,8 +11,6 @@
         </div>
 
         <div class="flex flex-col gap-2">
-            <BackupBtn />
-            <!-- <ThemeToggler /> -->
             <Button @click="handleLogout" variant="outline" size="icon">
                 <LogOut />
             </Button>
@@ -23,7 +21,6 @@
 <script setup lang="ts">
 import { useStore } from '@/store'
 import { useRouter } from 'vue-router'
-import BackupBtn from './backup-btn.vue'
 import { LogOut } from 'lucide-vue-next'
 import { LINKS } from '@/utils/constants'
 import { createToast } from '@/lib/toast'

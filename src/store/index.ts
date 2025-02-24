@@ -5,10 +5,13 @@ import { EXPIRATION_TIME } from "@/utils/constants";
 export const useStore = defineStore("app", {
   state: () => ({
     user: null as User | null,
+    database: localStorage.getItem('database') as string | null,
   }),
   getters: {
     userData: state => state.user,
     isLogged: () => !!localStorage.getItem("auth"),
+    getDatabase: state => state.database || 'database.db',
+    getDatabaseType: state => state.database ? state.database.split('_')[0] : 'current'
   },
   actions: {
     login(user: User) {
@@ -32,5 +35,14 @@ export const useStore = defineStore("app", {
         }
       }
     },
+
+    setDatabase(db: string | null) {
+      this.$patch({ database: db })
+      if(db) {
+        localStorage.setItem('database', db)
+      } else {
+        localStorage.removeItem('database')
+      }
+    }
   },
 });

@@ -38,7 +38,7 @@
                 <Button @click="() => dialog1=true" size="icon">
                     <Download />
                 </Button>
-                <Button v-if="store.userData?.role === 'ADMIN'" @click="() => dialog=true" class="flex-1">Yangi mijoz kiritish</Button>
+                <Button :disabled="store.getDatabaseType !== 'current'" v-if="store.userData?.role === 'ADMIN'" @click="() => dialog=true" class="flex-1">Yangi mijoz kiritish</Button>
             </div>
         </template>
         <template #item.status="{item}">
@@ -57,11 +57,11 @@
         </template>
         <template #item.actions="{ item, index }">
             <div v-if="store.userData?.role === 'ADMIN'" class="flex items-center gap-2 justify-end" @click.stop>
-                <Button @click="editItem(item, index)" size="sm" class="!bg-[#008040] hover:!bg-[#007040]">
+                <Button :disabled="store.getDatabaseType !== 'current'" @click="editItem(item, index)" size="sm" class="!bg-[#008040] hover:!bg-[#007040]">
                     <Pen />
                     O'zgartirish
                 </Button>
-                <Button @click="remove(item.id, index)" size="sm" class="!bg-[#D93333] hover:!bg-[#aa3333]">
+                <Button :disabled="store.getDatabaseType !== 'current'" @click="remove(item.id, index)" size="sm" class="!bg-[#D93333] hover:!bg-[#aa3333]">
                     <Trash />
                     O'chirish
                 </Button>

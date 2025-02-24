@@ -14,6 +14,7 @@ export const router = createRouter({
             children: [
             { path: '', component: async () => import('@/pages/clients.vue') },
             { path: 'users', component: async () => import('@/pages/users.vue') },
+            { path: 'settings', component: async () => import('@/pages/settings.vue') },
             { path: 'expenses/:id', component: async () => import('@/pages/expenses.vue') },
         ] }
     ]

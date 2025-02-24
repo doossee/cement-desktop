@@ -14,21 +14,21 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
     pageSize: 'A4', // Можно A3, A4, A5 и т. д.
     pageOrientation: 'landscape',
     content: [
-      { text: `Mijoz: ${client.name}`, style: "subheader" },
-      { text: `Telefon: ${client.phone || "Mavjud emas"}`, style: "subheader" },
+      { text: `Mijoz: ${client.name}`, style: "header" },
+      { text: `Telefon: ${client.phone || "Mavjud emas"}`, style: "header" },
       {
         text: [
-          { text: "Balansi: ", style: "subheader", color: "black" },
+          { text: "Balansi: ", style: "header", color: "black" },
           { 
             text: (client.balance - (client.initial_debt || 0)).toLocaleString('ru-RU'), 
-            style: "subheader",
+            style: "header",
             color: (client.balance - (client.initial_debt || 0)) < 0 
               ? "#f54a00" 
               : (client.balance - (client.initial_debt || 0)) === 0 
               ? "black" 
               : "#008236"
           },
-          { text: " so'm", style: "subheader", color: "black" }
+          { text: " so'm", style: "header", color: "black" }
         ],
       },
       // {
@@ -83,8 +83,8 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
       },
     ],
     styles: {
-      header: { fontSize: 16, bold: true, margin: [0, 0, 0, 5] },
-      subheader: { fontSize: 12, bold: true, margin: [0, 0, 0, 5] },
+      header: { fontSize: 18, bold: true, margin: [0, 0, 0, 5] },
+      subheader: { fontSize: 10, bold: true, margin: [0, 10, 0, 5] },
       sectionHeader: { fontSize: 14, bold: true, margin: [0, 20, 0, 5] },
     },
   };

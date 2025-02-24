@@ -1,7 +1,20 @@
+[+] archive permission yearly
+[+] readonyl yearly archive
+[+] change yearly balance-initial_debt
+[+] load backup-backup
+
+[+] adding backup load
+[+] adding yearly archive | initial_debt change in year
+
+[+] font size balance pdf up / initial_debt down
+[+] sack num required
+[+] initial_debt remove
+
+
+
 [+/+] fully edit expanses / balance calculate
 [+] delete
 [+] remove year
-
 
 [+-] add functionally initial debt
 [+/-] add backup / add load db backup

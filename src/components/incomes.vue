@@ -20,7 +20,7 @@
                             </DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                    <Button v-if="store.userData?.role === 'ADMIN'" @click="incomeDialog=true" class="!bg-[#008040] hover:!bg-[#007040]">To'lov kiritish</Button>
+                    <Button :disabled="store.getDatabaseType !== 'current'" v-if="store.userData?.role === 'ADMIN'" @click="incomeDialog=true" class="!bg-[#008040] hover:!bg-[#007040]">To'lov kiritish</Button>
                 </div>
             </div>
         </template>
@@ -48,10 +48,10 @@
         </template>
         <template #item.actions="{ item, index }">
             <div v-if="store.userData?.role === 'ADMIN' && item.id" class="flex items-center gap-2 justify-end" @click.stop>
-                <Button @click="editItem(item)" size="icon" class="!bg-[#008040] hover:!bg-[#007040]">
+                <Button :disabled="store.getDatabaseType !== 'current'" @click="editItem(item)" size="icon" class="!bg-[#008040] hover:!bg-[#007040]">
                     <Pen />
                 </Button>
-                <Button v-show="false" @click="handleDeleteIncome(item.id, index)" size="icon" class="!bg-[#D93333] hover:!bg-[#aa3333]">
+                <Button :disabled="store.getDatabaseType !== 'current'" v-show="false" @click="handleDeleteIncome(item.id, index)" size="icon" class="!bg-[#D93333] hover:!bg-[#aa3333]">
                     <Trash />
                 </Button>
             </div>
@@ -123,10 +123,10 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import { useStore } from '@/store'
-import { computed, ref } from 'vue'
 import { Income } from '@/utils/types'
 import { useForm } from 'vee-validate'
 import { createToast } from '@/lib/toast'
+import { computed, ref, watch } from 'vue'
 import { Input } from '@/components/ui/input'
 import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
@@ -175,7 +175,7 @@ const incomeformSchema = toTypedSchema(z.object({
     required_error: "Sana kiritilish shart" }).default(new Date())
 }))
 
-const { handleSubmit, isSubmitting, setFieldValue, values } = useForm({
+const { handleSubmit, isSubmitting, setFieldValue, values, resetForm } = useForm({
     validationSchema: incomeformSchema,
     initialValues: {
         amount: 0,
@@ -243,9 +243,17 @@ const handleDeleteIncome = async (id: number, index: number) => {
 }
 
 const closeDialog = () => {
+    currency.value = 1
     itemId.value = null
+    isCurrency.value = false
     incomeDialog.value = false
     setFieldValue('amount', 0)
     setFieldValue('method', 'CASH')
 }
+
+watch(incomeDialog, (isOpen) => {
+  if (isOpen && !itemId.value) {
+    resetForm();
+  }
+});
 </script>

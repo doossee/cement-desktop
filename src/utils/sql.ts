@@ -1,6 +1,12 @@
+import { useStore } from '@/store'
 import Database from '@tauri-apps/plugin-sql'
 
-export const DB = Database.load("sqlite:database.db")
+
+export const DB = () => {
+    const store = useStore()
+
+    return Database.load("sqlite:"+store.getDatabase)
+}
 
 // const init = async () => {
     // const db = await DB

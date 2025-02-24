@@ -1,4 +1,4 @@
-import { Users, Shield } from 'lucide-vue-next'
+import { Users, Shield, Settings } from 'lucide-vue-next'
 import type { ClientStatus, PaymentMethod, Role, ClientType } from './types'
 
 export const EXPIRATION_TIME = 3 * 60 * 60 * 1000;
@@ -79,7 +79,7 @@ export const CLIENT_HEADERS = [
     { title: 'Ismi', key: 'name', sorting: true },
     { title: 'Telefon Raqami', key: 'phone', sorting: false },
     { title: "Mablag'i", key: 'balance', sorting: true },
-    { title: "Qarzdorligi", key: 'debt', sorting: false },
+    // { title: "Qarzdorligi", key: 'debt', sorting: false },
     { title: "Holati", key: 'status', sorting: false },
     { title: "Turi", key: 'type', sorting: false },
     { title: 'Boshqarish', key: 'actions', sorting: false, class: "text-right" },
@@ -110,4 +110,5 @@ export const PURCHASE_HEADERS = [
 export const LINKS = [
     { title: "Mijozlar", url: "/", icon: Users, access: ["VIEWER", "ADMIN"] },
     { title: "Foydalanuvchilar", url: "/users", icon: Shield, access: ["ADMIN"] },
+    { title: "Sozlamalar", url: "/settings", icon: Settings, access: ["ADMIN"] },
 ]
