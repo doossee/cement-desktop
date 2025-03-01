@@ -75,10 +75,10 @@ export const getAllClients = async () => {
 export const createClient = async (data: Partial<Client>) => {
     const db = await DB()
 
-    const { name, phone, status, balance, type, initial_debt } = data
+    const { name, phone, status, balance, type, initial_debt, comment } = data
     await db.execute(
-        "INSERT INTO clients (name, phone, status, balance, type, initial_debt, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
-        [name, phone, status || 'CLEAR', balance || 0, type, initial_debt || null, ]
+        "INSERT INTO clients (name, phone, status, balance, type, initial_debt, comment, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)",
+        [name, phone, status || 'CLEAR', balance || 0, type, initial_debt || null, comment || '' ]
     )
 
     const [newClient]: any = await db.select(`

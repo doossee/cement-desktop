@@ -25,6 +25,7 @@ pub fn run() {
                 \"type\" TEXT NOT NULL DEFAULT 'DAILY',
                 \"balance\" INTEGER NOT NULL DEFAULT 0,
                 \"initial_debt\" INTEGER,
+                \"comment\" TEXT,
                 \"created_at\" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 \"updated_at\" DATETIME NOT NULL
             );
@@ -42,6 +43,8 @@ pub fn run() {
                 \"other_cost\" INTEGER,
                 \"total_price\" INTEGER NOT NULL,
                 \"date\" DATETIME NOT NULL,
+                \"comment\" TEXT,
+                \"driver\" TEXT,
                 \"created_at\" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 \"updated_at\" DATETIME NOT NULL,
                 CONSTRAINT \"purchases_client_id_fkey\" FOREIGN KEY (\"client_id\") REFERENCES \"clients\" (\"id\") ON DELETE RESTRICT ON UPDATE CASCADE
@@ -54,6 +57,7 @@ pub fn run() {
                 \"amount\" INTEGER NOT NULL,
                 \"method\" TEXT NOT NULL DEFAULT 'CASH',
                 \"date\" DATETIME NOT NULL,
+                \"comment\" TEXT,
                 \"created_at\" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
                 \"updated_at\" DATETIME NOT NULL,
                 CONSTRAINT \"incomes_client_id_fkey\" FOREIGN KEY (\"client_id\") REFERENCES \"clients\" (\"id\") ON DELETE RESTRICT ON UPDATE CASCADE

@@ -31,6 +31,12 @@
         <template #item.total_price="{item}">
             <span>{{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format(item.total_price||0) }} so'm</span>
         </template>
+        <template #item.comment="{ item }">
+            <p class="text-balance text-sm line-clamp-3 overflow-hidden text-ellipsis">{{ item.comment || '-' }}</p>
+        </template>
+        <template #item.driver="{ item }">
+            <p class="text-sm">{{ item.driver || '-' }}</p>
+        </template>
         <template #item.actions="{ item, index }">
             <div v-if="store.userData?.role === 'ADMIN' && item.id" class="flex items-center gap-2 justify-end" @click.stop>
                 <Button :disabled="store.getDatabaseType !== 'current'" @click="editItem(item)" size="icon" class="!bg-[#008040] hover:!bg-[#007040]">
@@ -128,6 +134,28 @@
                     <Input type="number" required min="0" step="any" :disabled="!isCurrency" v-model="currency" placeholder="Valyuta kursi" />
                 </div> -->
                 
+                <div class="grid gap-2 col-span-2">
+                    <FormField v-slot="{ componentField }" name="driver">
+                        <FormItem>
+                            <FormLabel>Haydovchi</FormLabel>
+                            <FormControl>
+                                <Input placeholder="Haydovchi" v-bind="componentField" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    </FormField>
+            
+                    <FormField v-slot="{ componentField }" name="comment">
+                        <FormItem>
+                            <FormLabel>Izoh</FormLabel>
+                            <FormControl>
+                                <Textarea placeholder="Izoh" v-bind="componentField" />
+                            </FormControl>
+                            <FormMessage />
+                        </FormItem>
+                    </FormField>
+                </div>
+
                 <Button type="submit" class="col-span-2" :disabled="isSubmitting">Saqlash</Button>
             </form>
         </DialogContent>
@@ -137,16 +165,17 @@
 <script setup lang="ts">
 import * as z from 'zod'
 import { useStore } from '@/store'
-import { computed, ref, watch } from 'vue'
 import { useForm } from 'vee-validate'
 import { Purchase } from '@/utils/types'
 import { createToast } from '@/lib/toast'
+import { computed, ref, watch } from 'vue'
 import { Pen, Trash } from 'lucide-vue-next'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toTypedSchema } from '@vee-validate/zod'
 import { ALERT_MESSAGES } from '@/utils/constants'
 import DataTable from '@/components/data-table.vue'
+import { Textarea } from '@/components/ui/textarea'
 import { PURCHASE_HEADERS } from '@/utils/constants'
 import DatePicker from '@/components/data-picker.vue'
 import { createPurchase, deletePurchase, updatePurchase } from '@/api'
@@ -180,12 +209,16 @@ const purchaseformSchema = toTypedSchema(z.object({
     scatter_price: z.coerce.number({ invalid_type_error: "Sochma narxi 0 dan katta bo'lishi shart" }),
     // .min(0, { message: "Sochma narxi 0 dan katta bo'lishi shart" }).default(0),
     date: z.date({ invalid_type_error: "Sana kiritilish shart",
-    required_error: "Sana kiritilish shart" }).default(new Date())
+    required_error: "Sana kiritilish shart" }).default(new Date()),
+    driver: z.string().optional(),
+    comment: z.string().optional(),
 }))
 
 const { handleSubmit, isSubmitting, values, setFieldValue, resetForm } = useForm({
     validationSchema: purchaseformSchema,
     initialValues: {
+        driver: "",
+        comment: "",
         car_cost: 0,
         sack_num: 0,
         other_cost: 0,
@@ -214,6 +247,8 @@ const editItem = (item: Purchase) => {
     itemId.value = item.id
     purchaseDialog.value = true
 
+    setFieldValue('driver', item.driver)
+    setFieldValue('comment', item.comment)
     setFieldValue('date', new Date(item.date))
     setFieldValue('client_id', item.client_id)
     setFieldValue('sack_num', item.sack_num||0)
@@ -270,14 +305,6 @@ const handleDeletePurchase = async (id: number, index: number) => {
 const closeDialog = () => {
     itemId.value = null
     purchaseDialog.value = false
-    // setFieldValue('car_cost', 0)
-    // setFieldValue('sack_num', 0)
-    // setFieldValue('other_cost', 0)
-    // setFieldValue('sack_price', 0)
-    // setFieldValue('scatter_num', 0)
-    // setFieldValue('scatter_price', 0)
-    // setFieldValue('date', new Date())
-    resetForm()
 }
 
 watch(purchaseDialog, (isOpen) => {

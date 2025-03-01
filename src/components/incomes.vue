@@ -46,6 +46,9 @@
             <span v-if="item.method" class="text-nowrap px-2 py-1 rounded-md" :class="PAYMENT_METHOD_COLORS[item.method]">{{ PAYMENT_METHODS[item.method] }}</span>
             <span v-else>-</span>
         </template>
+        <template #item.comment="{ item }">
+            <span class="text-balance text-sm line-clamp-3 overflow-hidden text-ellipsis">{{ item.comment || '-' }}</span>
+        </template>
         <template #item.actions="{ item, index }">
             <div v-if="store.userData?.role === 'ADMIN' && item.id" class="flex items-center gap-2 justify-end" @click.stop>
                 <Button :disabled="store.getDatabaseType !== 'current'" @click="editItem(item)" size="icon" class="!bg-[#008040] hover:!bg-[#007040]">
@@ -114,6 +117,16 @@
                     <Input type="number" required min="0" step="any" :disabled="!isCurrency" v-model="currency" placeholder="Valyuta kursi" />
                 </div>
         
+                <FormField v-slot="{ componentField }" name="comment">
+                    <FormItem>
+                        <FormLabel>Izoh</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Izoh" v-bind="componentField" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
+                
                 <Button type="submit" :disabled="isSubmitting">Saqlash</Button>
             </form>
         </DialogContent>
@@ -132,6 +145,7 @@ import { Switch } from '@/components/ui/switch'
 import { Button } from '@/components/ui/button'
 import { toTypedSchema } from '@vee-validate/zod'
 import DataTable from '@/components/data-table.vue'
+import { Textarea } from '@/components/ui/textarea'
 import DatePicker from '@/components/data-picker.vue'
 import { ListFilter, Check, Pen, Trash } from 'lucide-vue-next'
 import { createIncome, updateIncome, deleteIncome } from '@/api'
@@ -172,13 +186,15 @@ const incomeformSchema = toTypedSchema(z.object({
     invalid_type_error: "To'lov turi belgilanishi shart"})
     .min(1, { message: "To'lov turi belgilanishi shart" }),
     date: z.date({ invalid_type_error: "Sana kiritilish shart",
-    required_error: "Sana kiritilish shart" }).default(new Date())
+    required_error: "Sana kiritilish shart" }).default(new Date()),
+    comment: z.string().optional(),
 }))
 
 const { handleSubmit, isSubmitting, setFieldValue, values, resetForm } = useForm({
     validationSchema: incomeformSchema,
     initialValues: {
         amount: 0,
+        comment: "",
         method: "CASH",
         date: new Date(),
         client_id: clientId,
@@ -195,6 +211,7 @@ const editItem = (item: Income) => {
     }
     setFieldValue('amount', item.amount)
     setFieldValue('method', item.method)
+    setFieldValue('comment', item.comment)
     setFieldValue('date', new Date(item.date))
     setFieldValue('client_id', item.client_id)
 }
@@ -247,8 +264,6 @@ const closeDialog = () => {
     itemId.value = null
     isCurrency.value = false
     incomeDialog.value = false
-    setFieldValue('amount', 0)
-    setFieldValue('method', 'CASH')
 }
 
 watch(incomeDialog, (isOpen) => {

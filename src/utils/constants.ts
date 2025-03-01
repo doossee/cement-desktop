@@ -82,6 +82,7 @@ export const CLIENT_HEADERS = [
     // { title: "Qarzdorligi", key: 'debt', sorting: false },
     { title: "Holati", key: 'status', sorting: false },
     { title: "Turi", key: 'type', sorting: false },
+    { title: 'Izoh', key: 'comment' },
     { title: 'Boshqarish', key: 'actions', sorting: false, class: "text-right" },
 ]
 
@@ -90,6 +91,7 @@ export const INCOME_HEADERS = [
     { title: 'Summasi', key: 'amount', sorting: true },
     { title: 'Valyuta kursi', key: 'currency', sorting: false },
     { title: "To'lov turi", key: 'method', sorting: false },
+    { title: 'Izoh', key: 'comment' },
     { title: 'Boshqarish', key: 'actions', sorting: false, class: "text-right" },
 ]
 
@@ -104,6 +106,8 @@ export const PURCHASE_HEADERS = [
     { title: 'Mashina xarajati', key: 'car_cost', sorting: true },
     { title: 'Olgan naqd puli', key: 'other_cost', sorting: true },
     { title: 'Jami summasi', key: 'total_price', sorting: true },
+    { title: 'Izoh', key: 'comment' },
+    { title: 'Haydovchi', key: 'driver' },
     { title: 'Boshqarish', key: 'actions', sorting: false, class: "text-right" },
 ]
 

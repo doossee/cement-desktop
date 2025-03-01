@@ -60,11 +60,12 @@ export const createPurchase = async (data: Partial<Purchase>) => {
     await db.execute("UPDATE clients SET status = ? WHERE id = ?", [status, data.client_id]);
 
     await db.execute(`
-        INSERT INTO purchases (client_id, sack_num, sack_price, scatter_num, scatter_price, sum_price, car_cost, other_cost, total_price, currency, date, created_at, updated_at) 
-        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        INSERT INTO purchases (client_id, sack_num, sack_price, scatter_num, scatter_price, sum_price, car_cost, other_cost, total_price, currency, date, driver, comment, created_at, updated_at) 
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
     `, [
         data.client_id, data.sack_num, data.sack_price, data.scatter_num, data.scatter_price,
-        data.sum_price, data.car_cost, data.other_cost, data.total_price, data?.currency||null, data.date
+        data.sum_price, data.car_cost, data.other_cost, data.total_price, data?.currency||null, data.date,
+        data.driver || '', data.comment || ''
     ]);
     const [newPurchase]: any = await db.select(`
         SELECT * FROM purchases WHERE client_id = $1 ORDER BY id DESC LIMIT 1
@@ -84,9 +85,9 @@ export const createIncome = async (data: Partial<Income>) => {
     await db.execute("UPDATE clients SET status = ? WHERE id = ?", [status, data.client_id]);
 
     await db.execute(`
-        INSERT INTO incomes (client_id, amount, method, currency, date, created_at, updated_at) 
-        VALUES ($1, $2, $3, $4, $5, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-    `, [data.client_id, data.amount, data.method, data?.currency || null, data.date]);
+        INSERT INTO incomes (client_id, amount, method, currency, date, comment, created_at, updated_at) 
+        VALUES ($1, $2, $3, $4, $5, $6, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+    `, [data.client_id, data.amount, data.method, data?.currency || null, data.date, data.comment || '']);
 
     const [newPurchase]: any = await db.select(`
         SELECT * FROM incomes WHERE client_id = $1 ORDER BY id DESC LIMIT 1

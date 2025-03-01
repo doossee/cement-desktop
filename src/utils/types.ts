@@ -40,6 +40,7 @@ export interface User {
 export interface Client {
   id: number;
   name: string;
+  comment: string;
   balance: number;
   created_at: Date;
   updated_at: Date;
@@ -53,20 +54,22 @@ export interface Client {
 
 export interface Purchase {
   id: number;
-  client_id: number;
+  date: Date;
   client: Client;
+  driver: string;
+  comment: string;
+  created_at: Date;
+  updated_at: Date;
+  client_id: number;
+  sum_price: number;
+  currency?: number;
+  total_price: number;
+  car_cost?: number | null;
   sack_num?: number | null;
+  other_cost?: number | null;
   sack_price?: number | null;
   scatter_num?: number | null;
   scatter_price?: number | null;
-  sum_price: number;
-  currency?: number;
-  car_cost?: number | null;
-  other_cost?: number | null;
-  total_price: number;
-  date: Date;
-  created_at: Date;
-  updated_at: Date;
 }
 
 export interface Income {
@@ -74,6 +77,7 @@ export interface Income {
   date: Date
   client: Client
   amount: number
+  comment: string
   created_at: Date
   updated_at: Date
   client_id: number

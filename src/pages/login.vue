@@ -6,7 +6,7 @@
             </CardHeader>
             <CardContent class="w-[400px]">
     
-                <form @submit="handleCreateIncome" class="grid gap-y-2">
+                <form @submit="handleLogin" class="grid gap-y-2">
                     <FormField v-slot="{ componentField }" name="username">
                         <FormItem>
                             <FormLabel>Login</FormLabel>
@@ -66,7 +66,7 @@ const { handleSubmit, isSubmitting, resetForm } = useForm({
     validationSchema: incomeformSchema,
 })
 
-const handleCreateIncome = handleSubmit(async (values) => {
+const handleLogin = handleSubmit(async (values) => {
     try {
         const user = await loginUser(values)
         if(!user) return createToast(ALERT_MESSAGES.LOGIN_FAILED, 'WARNING')

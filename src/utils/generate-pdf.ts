@@ -42,9 +42,9 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
       {
         table: {
           headerRows: 1,
-          widths: ["auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto"],
+          widths: ["auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto", "auto"],
           body: [
-            ["Sanasi", "Qop", "Qop narxi", "Sochma", "Sochma narxi", "Summasi", "Mashina xarajati", "Olgan naqd puli", "Jami summasi"],
+            ["Sanasi", "Qop", "Qop narxi", "Sochma", "Sochma narxi", "Summasi", "Mashina xarajati", "Olgan naqd puli", "Jami summasi", "Haydovchi", "Izoh"],
             ...purchases
             .map((p) => [
                 p.date ? new Date(p.date).toLocaleDateString() : "Jami: ",
@@ -56,6 +56,8 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
                 p.car_cost ? `${p.car_cost.toLocaleString('ru-RU')} ${ p?.currency ? "$" : "so'm" }` : "0",
                 p.other_cost ? `${p.other_cost.toLocaleString('ru-RU')} ${ p?.currency ? "$" : "so'm" }` : "0",
                 `${p.total_price?.toLocaleString('ru-RU') || 0} so'm`,
+                p.driver || "-",
+                p.comment || "-",
             ]),
           ],
         },
@@ -66,9 +68,9 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
       {
         table: {
           headerRows: 1,
-          widths: ["auto", "auto", "auto", "auto"],
+          widths: ["auto", "auto", "auto", "auto", "auto"],
           body: [
-            ["Sana", "To'lov summasi", "Valyuta kursi", "To'lov turi"],
+            ["Sana", "To'lov summasi", "Valyuta kursi", "To'lov turi", "Izoh"],
             ...incomes
             .map((i) => [
                 i.date ? new Date(i.date).toLocaleDateString() : "Jami: ",
@@ -76,6 +78,7 @@ export async function generateClientPDF(client: Client, purchases: Purchase[], i
                 (i.amount?.toLocaleString('ru-RU') || 0) + " so'm",
                 i.currency ? i.currency + " so'm" : "-",
                 i.method ? PAYMENT_METHODS[i.method] : '-',
+                i.comment || "-",
             ]),
           ],
         },

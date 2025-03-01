@@ -55,6 +55,9 @@
                 {{ new Intl.NumberFormat('ru-RU', { style: 'decimal' }).format((item.balance - (item.initial_debt || 0))) }} so'm
             </span>
         </template>
+        <template #item.comment="{ item }">
+            <p class="text-balance text-sm line-clamp-3 overflow-hidden text-ellipsis">{{ item.comment || '-' }}</p>
+        </template>
         <template #item.actions="{ item, index }">
             <div v-if="store.userData?.role === 'ADMIN'" class="flex items-center gap-2 justify-end" @click.stop>
                 <Button :disabled="store.getDatabaseType !== 'current'" @click="editItem(item, index)" size="sm" class="!bg-[#008040] hover:!bg-[#007040]">
@@ -127,6 +130,16 @@
                     </FormItem>
                 </FormField>
 
+                <FormField v-slot="{ componentField }" name="comment">
+                    <FormItem>
+                        <FormLabel>Izoh</FormLabel>
+                        <FormControl>
+                            <Textarea placeholder="Izoh" v-bind="componentField" />
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                </FormField>
+
                 <Button type="submit" :disabled="isSubmitting">Saqlash</Button>
             </form>
         </DialogContent>
@@ -189,6 +202,7 @@ import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { toTypedSchema } from '@vee-validate/zod'
 import DataTable from '@/components/data-table.vue'
+import { Textarea } from '@/components/ui/textarea'
 import { Trash, Pen, Download } from 'lucide-vue-next'
 import { generateClientPDF } from '@/utils/generate-pdf'
 import DateRangePicker from '@/components/date-range-picker.vue'
@@ -213,6 +227,7 @@ const itemIndex = ref<null|number>(null)
 const userInitialValues = {
     name: "",
     phone: "",
+    comment: "",
     type: "DAILY",
 
     initial_debt: 0,
@@ -235,6 +250,7 @@ const formSchema = toTypedSchema(z.object({
     .min(2, { message: "Mijoz turi beligilanishi shart" }).max(50).nonempty(),
 
   initial_debt: z.number().default(0).optional(),
+  comment: z.string().optional(),
 }))
 
 const { handleSubmit, resetForm, setFieldValue, isSubmitting, values } = useForm({
@@ -270,6 +286,7 @@ const editItem = (item: Client, index: number) => {
     setFieldValue('name', item.name)
     setFieldValue('type', item.type!)
     setFieldValue('phone', item.phone!)
+    setFieldValue('comment', item.comment)
     setFieldValue('initial_debt', item.initial_debt!)
 }
 
