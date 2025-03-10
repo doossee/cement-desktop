@@ -1,4 +1,40 @@
 <template>
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+        <Card class="shadow-none mb-2">
+            <CardContent class="py-2 pl-2 pr-4 flex justify-between items-center">
+                <div class="flex items-center justify-center w-[40px] h-[40px] rounded-full bg-[#ff770015]">
+                    <CircleAlert class="text-[#ff7700]" />
+                </div>
+                <div class="flex gap-1 text-sm text-right">
+                    <p>Umumiy qarzdorlik:</p>
+                    <p class="text-white">{{ (totals.debt + totals.purchase - totals.income).toLocaleString('ru-RU') }} s'om</p>
+                </div>
+            </CardContent>
+        </Card>
+        <Card class="shadow-none mb-2">
+            <CardContent class="py-2 pl-2 pr-4 flex justify-between items-center">
+                <div class="flex items-center justify-center w-[40px] h-[40px] rounded-full bg-[#fd323215]">
+                    <ArrowDownCircle class="text-[#fd3232]" />
+                </div>
+                <div class="flex gap-1 text-sm text-right">
+                    <p>Umumiy chiqim:</p>
+                    <p class="text-white">{{ (totals.purchase ).toLocaleString('ru-RU') }} s'om</p>
+                </div>
+            </CardContent>
+        </Card>
+        <Card class="shadow-none mb-2">
+            <CardContent class="py-2 pl-2 pr-4 flex justify-between items-center">
+                <div class="flex items-center justify-center w-[40px] h-[40px] rounded-full bg-[#00e87415]">
+                    <ArrowUpCircle class="text-[#00e874]" />
+                </div>
+                <div class="flex gap-1 text-sm text-right">
+                    <p>Umumiy kirim:</p>
+                    <p class="text-white">{{ (totals.income ).toLocaleString('ru-RU') }} s'om</p>
+                </div>
+            </CardContent>
+        </Card>
+    </div>
+
     <DataTable
         trClass="cursor-pointer"
 
@@ -203,19 +239,25 @@ import { Button } from '@/components/ui/button'
 import { toTypedSchema } from '@vee-validate/zod'
 import DataTable from '@/components/data-table.vue'
 import { Textarea } from '@/components/ui/textarea'
-import { Trash, Pen, Download } from 'lucide-vue-next'
 import { generateClientPDF } from '@/utils/generate-pdf'
+import { Card, CardContent } from '@/components/ui/card'
 import DateRangePicker from '@/components/date-range-picker.vue'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
-import { getClients, createClient, deleteClient, updateClient, getAllClients } from '@/api/clients'
+import { Trash, Pen, Download, CircleAlert, ArrowDownCircle, ArrowUpCircle } from 'lucide-vue-next'
 import { CalendarClock, Calendar, CalendarFold, CalendarDays, CalendarRange, CalendarCheck } from 'lucide-vue-next'
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { getClients, createClient, deleteClient, updateClient, getAllClients, getTotalClientExpenses } from '@/api/clients'
 import { CLIENT_STATUSES, CLIENT_HEADERS, ALERT_MESSAGES, CLIENT_STATUS_COLORS, CLIENT_TYPES, CLIENT_TYPE_COLORS } from '@/utils/constants'
 
 const store = useStore()
 
+const totals = ref({
+    debt: 0,
+    income: 0,
+    purchase: 0,
+})
 const count = ref(0)
 const dialog = ref(false)
 const dialog1 = ref(false)
@@ -273,6 +315,11 @@ const getItems = async (params: any) => {
         const data = await getClients(params)
         items.value = data.items as any
         count.value = data.count
+
+        const totalItems = await getTotalClientExpenses(params)
+        totals.value.debt = totalItems?.totalDebt||0
+        totals.value.income = (totalItems.totalIncomes?.amount||0)
+        totals.value.purchase = (totalItems.totalPurchase?.total_price||0)
     } catch (error) {
         console.log(error);
     }
@@ -303,6 +350,7 @@ const remove = async (id: number, index: number) => {
 }
 
 const create = async (body: Partial<typeof values>) => {
+    if(body.initial_debt) Object.assign(body, { status: 'DEBT' })
     const data = await createClient(body)
 
     createToast(ALERT_MESSAGES.DATA_UPDATED, "SUCCESS")
@@ -310,6 +358,12 @@ const create = async (body: Partial<typeof values>) => {
 }
 
 const update = async (id: number, body: Partial<typeof values>) => {
+    const item = items.value[itemIndex.value!]
+    if(item && typeof body.initial_debt == 'number') {
+        if(item.balance - body.initial_debt === 0) Object.assign(body, { status: 'CLEAR' }) 
+        if(item.balance - body.initial_debt > 0) Object.assign(body, { status: 'OWED' }) 
+        if(item.balance - body.initial_debt < 0) Object.assign(body, { status: 'DEBT' }) 
+    }
     const data = await updateClient(id, body)
     createToast(ALERT_MESSAGES.DATA_CREATED, "SUCCESS")
     Object.assign(items.value[itemIndex.value!], data)

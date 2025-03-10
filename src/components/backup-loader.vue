@@ -63,8 +63,11 @@ const handleLoadBackups = async () => {
     }
 }
 
-const handleCreateBackup = async () => {
-    if(!confirm("Malumotlar bazasini bekapda saqlamoqchimisiz?")) return
+const handleCreateBackup = async (usePrompt: boolean = true) => {
+    let filename: string | null = null
+    if(usePrompt){
+        filename = prompt("Bekap faylning nomini kiriting:")
+    }
 
     try {
         const client_date = new Date().toISOString().replace(/[:.]/g, "-").toString()
@@ -73,7 +76,7 @@ const handleCreateBackup = async () => {
         const document_path = await documentDir();
     
         const db_path = `${app_data}\\database.db`
-        const backup_db = `backup_${client_date}.db`
+        const backup_db = (filename && filename.trim() && usePrompt) ? filename : `backup_${client_date}.db`
         const backup_dir = document_path + "\\MyBackups"
         const backup_path = `${backup_dir}\\${backup_db}`
         
@@ -93,7 +96,7 @@ const handleUseBackup = async (file: string) => {
     if(!confirm("Ushbu bekapni faollashtirmoqchimisiz?")) return
 
     try {
-        await handleCreateBackup()
+        await handleCreateBackup(false)
     
         const db = await DB()
         await db.close()

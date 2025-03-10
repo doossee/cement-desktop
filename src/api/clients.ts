@@ -1,5 +1,5 @@
 import { DB } from '@/utils/sql'
-import { Client } from '@/utils/types'
+import { Client, Purchase, Income } from '@/utils/types'
 
 interface ClientFilterParams {
     page: number
@@ -70,6 +70,64 @@ export const getAllClients = async () => {
     const items = await db.select<Client[]>(`SELECT * FROM clients`)
     
     return { items }
+}
+
+export const getTotalClientExpenses = async ({search = '', filters = {}}: ClientFilterParams) => {
+    const db = await DB()
+
+    let whereClauses: (string|number)[] = []
+    let params: (string|number)[] = []
+
+    if (search) {
+        whereClauses.push("(name LIKE ? OR phone LIKE ?)")
+        params.push(`%${search}%`, `%${search}%`)
+    }
+    
+    if (filters.id) {
+        whereClauses.push("id = ?")
+        params.push(filters.id)
+    }
+    
+    if (filters.status) {
+        whereClauses.push("status = ?")
+        params.push(filters.status)
+    }
+
+    if (filters.type) {
+        whereClauses.push("type = ?")
+        params.push(filters.type)
+    }
+    
+    if (filters.startDate && filters.endDate) {
+        whereClauses.push("created_at BETWEEN ? AND ?")
+        params.push(filters.startDate, filters.endDate)
+    } else if (filters.startDate) {
+        whereClauses.push("created_at BETWEEN ? AND ?")
+        const endOfDay = new Date(filters.startDate)
+        endOfDay.setHours(23, 59, 59, 999)
+        params.push(filters.startDate, endOfDay.toISOString())
+    }
+
+    let whereSQL = whereClauses.length ? `WHERE ${whereClauses.join(" AND ")}` : ""
+
+    const items = await db.select<Pick<Client, 'id' | 'initial_debt'>[]>(`SELECT id, initial_debt FROM clients ${whereSQL}`, params)
+    
+    const [totalPurchase] = await db.select<Purchase[]>(`
+        SELECT
+            SUM(total_price) as total_price
+        FROM purchases
+        WHERE client_id in (${items.map(c => c.id).join(', ')})`);
+
+    const [totalIncomes] = await db.select<Income[]>(`
+        SELECT SUM(
+            CASE 
+                WHEN currency IS NULL OR currency = 0 OR currency = 1 THEN amount 
+                ELSE amount * currency 
+            END
+        ) as amount FROM incomes 
+        WHERE client_id in (${items.map(c => c.id).join(', ')})`);
+
+    return { totalPurchase, totalIncomes, totalDebt: items.reduce((a,b) => (b.initial_debt||0) + a, 0) }
 }
 
 export const createClient = async (data: Partial<Client>) => {
